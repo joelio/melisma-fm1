@@ -36,6 +36,7 @@ static void random_piece(mel_piece_t *p)
     p->shape = (uint8_t)rnd(MEL_SHAPES); p->colour = (uint8_t)rnd(MEL_COLOURS); p->key = (uint8_t)rnd(MEL_KEYS);
     p->length = (uint8_t)rnd(MEL_LENGTHS); p->layout = (uint8_t)rnd(MEL_LAYOUTS); p->follow = (uint8_t)rnd(2);
     p->trim = (uint8_t)rnd(MEL_TRIMS); p->boost = (uint8_t)rnd(MEL_MAX_BOOST + 1u); p->variation = (uint16_t)rnd(MEL_VARIATIONS);
+    p->style = (uint8_t)rnd(MEL_STYLES);
     for (r = 0; r < MEL_ROLES; r++) { p->role[r] = (uint8_t)rnd(4); p->sound[r] = (uint8_t)rnd(MEL_SOUNDS); p->take[r] = (uint8_t)rnd(MEL_TAKES); }
 }
 
@@ -100,6 +101,7 @@ static void check_piece(const mel_piece_t *p) { check_piece_fill(p, 0); }
 static void check_piece_fill(const mel_piece_t *p, uint32_t fill)
 {
     static const uint8_t ROLE_LO[3] = {33, 52, 60}, ROLE_HI[3] = {56, 75, 87};
+    const mel_groove_t *gr = mel_groove(p);
     mel_plan_t pl;
     mel_ev_t ev[MEL_ROLES][MEL_MAX_EV], again[MEL_MAX_EV];
     uint32_t n[MEL_ROLES], bar, r, j, total;
@@ -107,7 +109,8 @@ static void check_piece_fill(const mel_piece_t *p, uint32_t fill)
     describe(p, d);
     mel_plan(p, &pl);
     total = mel_bar_ticks(&pl);
-    CHECK(pl.tempo >= MEL_TEMPO[p->energy][0] && pl.tempo <= MEL_TEMPO[p->energy][1], "%s: tempo %u out of its band", d, pl.tempo);
+    if (gr) CHECK(pl.tempo >= gr->lo && pl.tempo <= gr->hi, "%s: tempo %u out of its style's band", d, pl.tempo);
+    else CHECK(pl.tempo >= MEL_TEMPO[p->energy][0] && pl.tempo <= MEL_TEMPO[p->energy][1], "%s: tempo %u out of its band", d, pl.tempo);
     CHECK(pl.ncand >= 2u && pl.cand[0] == 1u, "%s: nowhere to go (%u chords)", d, pl.ncand);
     for (bar = 0; bar < pl.bars; bar++) {
         uint8_t at[7 * 96];
@@ -118,7 +121,7 @@ static void check_piece_fill(const mel_piece_t *p, uint32_t fill)
         if (bar == 0u) CHECK(deg == 1u, "%s: does not open at home", d);
         for (r = 0; r < MEL_ROLES; r++) {
             n[r] = mel_bar(p, &pl, r, bar, fill, ev[r]);
-            CHECK(n[r] >= 1u && n[r] <= MEL_MAX_EV, "%s: %s bar %u has %u notes", d, MEL_ROLE_NAME[r], bar, n[r]);
+            CHECK((n[r] >= 1u || (r == MEL_PULSE && gr && !gr->k && !gr->s && !gr->h)) && n[r] <= MEL_MAX_EV, "%s: %s bar %u has %u notes", d, MEL_ROLE_NAME[r], bar, n[r]);
             CHECK(mel_bar(p, &pl, r, bar, fill, again) == n[r] && !memcmp(ev[r], again, n[r] * sizeof again[0]),
                   "%s: %s bar %u is not the same twice", d, MEL_ROLE_NAME[r], bar);
             for (j = 0; j < n[r]; j++) {
@@ -129,12 +132,13 @@ static void check_piece_fill(const mel_piece_t *p, uint32_t fill)
                 CHECK(!j || e->at > ev[r][j - 1u].at, "%s: %s bar %u notes out of order", d, MEL_ROLE_NAME[r], bar);
                 CHECK(!j || rung || ev[r][j - 1u].at + ev[r][j - 1u].len <= e->at, "%s: %s bar %u note %u overlaps the next", d, MEL_ROLE_NAME[r], bar, j - 1u);
                 CHECK(e->vel >= 20u && e->vel <= 127u, "%s: velocity %u", d, e->vel);
-                if (r != MEL_CHORDS) CHECK(e->n == 1u, "%s: %s plays %u notes at once", d, MEL_ROLE_NAME[r], e->n);
-                else if (m == MEL_BLOCK || m == MEL_OPEN || m == MEL_OFFBEAT) CHECK(e->n == 3u, "%s: a %s chord of %u notes", d, MEL_MANNER_NAME[m], e->n);
-                else if (m <= MEL_WAVE) CHECK(e->n == 1u, "%s: %s plays %u notes at once", d, MEL_MANNER_NAME[m], e->n);
-                else CHECK(e->n >= 1u && e->n <= 3u, "%s: %s plays %u notes at once", d, MEL_MANNER_NAME[m], e->n);
+                if (r != MEL_CHORDS) { CHECK(e->n == 1u, "%s: %s plays %u notes at once", d, MEL_ROLE_NAME[r], e->n); }
+                else if (gr && gr->c && (gr->flags & (MEL_G_ARP | MEL_G_BOOGIE)) && m < MEL_CLIMB) { CHECK(e->n <= 2u, "%s: a chord of %u in a style that plays fewer", d, e->n); }
+                else if (m == MEL_BLOCK || m == MEL_OPEN || m == MEL_OFFBEAT) { CHECK(e->n == 3u, "%s: a %s chord of %u notes", d, MEL_MANNER_NAME[m], e->n); }
+                else if (m <= MEL_WAVE) { CHECK(e->n == 1u, "%s: %s plays %u notes at once", d, MEL_MANNER_NAME[m], e->n); }
+                else { CHECK(e->n >= 1u && e->n <= 3u, "%s: %s plays %u notes at once", d, MEL_MANNER_NAME[m], e->n); }
                 if (r == MEL_PULSE) {
-                    CHECK(e->note[0] == MEL_THUMP || e->note[0] == MEL_SNAP || e->note[0] == MEL_TICK, "%s: pulse note %u", d, e->note[0]);
+                    CHECK(e->note[0] == MEL_THUMP || e->note[0] == MEL_SNAP || e->note[0] == MEL_TICK || e->note[0] == MEL_RIM || e->note[0] == MEL_OPENHAT, "%s: pulse note %u", d, e->note[0]);
                 } else
                     for (i = 0; i < e->n; i++) {
                         CHECK(mel_in_scale(&pl, e->note[i]), "%s: %s bar %u plays %u, not in the scale", d, MEL_ROLE_NAME[r], bar, e->note[i]);
@@ -143,12 +147,12 @@ static void check_piece_fill(const mel_piece_t *p, uint32_t fill)
                 if (!(at[e->at] >> r & 1u)) at[e->at] |= (uint8_t)(1u << r);
             }
         }
-        if (n[MEL_BASS]) CHECK(ev[MEL_BASS][0].at == 0u, "%s: bar %u: the bass is not on the downbeat", d, bar);
-        if ((bar == 0u || p->shape != MEL_LOOP) && p->take[MEL_BASS] != MEL_PEDAL) {   /* a bar's first bass note is its chord's root */
+        if (n[MEL_BASS] && !(gr && gr->b)) CHECK(ev[MEL_BASS][0].at == 0u, "%s: bar %u: the bass is not on the downbeat", d, bar);
+        if ((bar == 0u || p->shape != MEL_LOOP) && p->take[MEL_BASS] != MEL_PEDAL && !(gr && gr->b)) {   /* a bar's first bass note is its chord's root */
             int32_t rootpc = mel_step_midi(&pl, (int32_t)deg - 1) % 12;
             CHECK(ev[MEL_BASS][0].note[0] % 12 == rootpc, "%s: bar %u: the bass opens on %u, the chord's root is %d", d, bar, ev[MEL_BASS][0].note[0], rootpc);
         }
-        if (fill) {                             /* a fill: the drums roll to the bar line, the harmony leaves the second half alone */
+        if (fill && !(gr && (gr->flags & MEL_G_NOFILL))) {   /* a fill: the drums roll to the bar line, the harmony leaves the second half alone */
             uint32_t from = fill >= 2u ? 0u : total - (pl.leaves / 2u ? pl.leaves / 2u : 1u) * MEL_LEAF_TICKS;
             CHECK(ev[MEL_PULSE][n[MEL_PULSE] - 1u].note[0] == MEL_SNAP && ev[MEL_PULSE][n[MEL_PULSE] - 1u].at + MEL_LEAF_TICKS > total,
                   "%s: bar %u: the fill does not end on a snap at the bar line", d, bar);
@@ -267,7 +271,8 @@ static void test_dials(void)
         CHECK(pl.mode == (p.colour ? p.colour - 1u : p.mood), "the scale is not the colour's");
         CHECK(pl.leaves == MEL_LEAVES[p.feel], "the bar has the wrong number of pulses");
         CHECK(pl.bars == MEL_LENGTH_BARS[p.length], "the piece has the wrong length");
-        CHECK((p.feel == MEL_SWUNG) == (pl.swing != 0), "swing where none was asked, or none where it was");
+        if (mel_groove(&p)) CHECK(pl.swing == (mel_groove(&p)->steps == 12u ? 64u : 0u), "a style's swing is its groove's");
+        else CHECK((p.feel == MEL_SWUNG) == (pl.swing != 0), "swing where none was asked, or none where it was");
         if (pl.swing) CHECK(pl.swing > 48u && pl.swing < 80u, "a swung beat splits at %u of 96", pl.swing);
     }
     mel_default(&p);                            /* turning the mood keeps the rhythm: only the notes change */
@@ -286,6 +291,67 @@ static void test_dials(void)
         }
         CHECK(same, "changing the mood moved the tune's rhythm");
     }
+}
+
+/* ---- styles: each groove says what it should */
+static uint32_t drum_at(const mel_ev_t *ev, uint32_t n, uint32_t tick, uint32_t note)
+{
+    uint32_t j;
+    for (j = 0; j < n; j++)
+        if (ev[j].note[0] == note && ev[j].at >= tick && ev[j].at < tick + 3u) return 1;
+    return 0;
+}
+static void test_styles(void)
+{
+    mel_piece_t p;
+    mel_plan_t pl;
+    mel_ev_t ev[MEL_MAX_EV], f[MEL_MAX_EV];
+    uint32_t st, feel, n, g, s, e, j, prev;
+    for (g = 0; g < MEL_GROOVES; g++) {         /* the table itself: every row as long as its bar */
+        const mel_groove_t *gr = &MEL_GROOVE[g];
+        const char *row[7] = {gr->k, gr->k2, gr->s, gr->h, gr->b, gr->b2, gr->c};
+        CHECK(gr->steps == 16u || gr->steps == 12u, "groove %u has %u steps", g, gr->steps);
+        CHECK(gr->lo < gr->hi && gr->swing >= 50u && gr->swing <= 67u, "groove %u: tempo or swing", g);
+        for (s = 0; s < 7u; s++)
+            if (row[s]) CHECK(strlen(row[s]) == gr->steps, "groove %u row %u is %u long", g, s, (unsigned)strlen(row[s]));
+    }
+    for (st = 1; st < MEL_STYLES; st++)
+        for (feel = 0; feel < 2u; feel++) {
+            const mel_groove_t *gr;
+            mel_default(&p);
+            all_engine(&p);
+            p.style = (uint8_t)st; p.feel = (uint8_t)feel;
+            gr = mel_groove(&p);
+            CHECK(gr != 0, "style %s has no groove in feel %u", MEL_STYLE_NAME[st], feel);
+            if (!gr) continue;
+            mel_plan(&p, &pl);
+            n = mel_bar(&p, &pl, MEL_PULSE, 0, 0, ev);
+            for (s = 0; s < gr->steps; s++) {   /* at MOVING the drums are the groove, hit for hit */
+                if (gr->k) CHECK(drum_at(ev, n, mel_gtick(gr, s), MEL_THUMP) == (gr->k[s] != '.'), "%s: the kick at step %u", MEL_STYLE_NAME[st], s);
+                if (gr->s) CHECK(drum_at(ev, n, mel_gtick(gr, s), gr->snare) == (gr->s[s] != '.'), "%s: the snare at step %u", MEL_STYLE_NAME[st], s);
+            }
+            if (!gr->k && !gr->s && !gr->h) CHECK(n == 0u, "%s should have no drums", MEL_STYLE_NAME[st]);
+            if (gr->flags & MEL_G_NOFILL) CHECK(mel_bar(&p, &pl, MEL_PULSE, 0, 1, f) == n && !memcmp(ev, f, n * sizeof ev[0]), "%s took a fill", MEL_STYLE_NAME[st]);
+            for (e = 0, prev = 0; e < MEL_ENERGIES; e++) {   /* more energy never means fewer drums, and it is faster */
+                uint32_t tempo;
+                p.energy = (uint8_t)e;
+                mel_plan(&p, &pl);
+                tempo = pl.tempo;
+                j = mel_bar(&p, &pl, MEL_PULSE, 0, 0, f);
+                CHECK(j >= prev, "%s: fewer drums at %s", MEL_STYLE_NAME[st], MEL_ENERGY_NAME[e]);
+                CHECK(tempo >= gr->lo && tempo <= gr->hi, "%s: tempo %u", MEL_STYLE_NAME[st], tempo);
+                prev = j;
+            }
+        }
+    mel_default(&p);                            /* in three, six and seven a style leaves the writing to the engine */
+    p.style = MEL_CLUB; p.feel = MEL_WALTZ;
+    CHECK(mel_groove(&p) == 0, "a groove in three");
+    mel_default(&p);
+    p.style = MEL_ISLAND;                       /* the one drop: nothing on the one */
+    all_engine(&p);
+    mel_plan(&p, &pl);
+    n = mel_bar(&p, &pl, MEL_PULSE, 0, 0, ev);
+    CHECK(!drum_at(ev, n, 0, MEL_THUMP) && drum_at(ev, n, 96, MEL_THUMP), "the one drop's kick");
 }
 
 /* ---- a take: another idea for one part, the rest as they were */
@@ -393,6 +459,7 @@ int main(int argc, char **argv)
     test_space();
     test_shape();
     test_dials();
+    test_styles();
     test_takes();
     test_keys();
     {                                           /* the shipped pieces: each valid, each its own, each sound */

@@ -13,6 +13,9 @@ typedef struct { const char *name; mel_piece_t piece; } mel_preset_t;
 #define P(name, mood_, energy_, feel_, shape_, colour_, key_, len_, var_, boost_, r0, r1, r2, r3, s0, s1, s2) \
     {name, {.mood = mood_, .energy = energy_, .feel = feel_, .shape = shape_, .colour = colour_, .key = key_, .length = len_, \
             .variation = var_, .boost = boost_, .role = {r0, r1, r2, r3}, .sound = {s0, s1, s2, 0}}}
+#define PS(name, style_, mood_, energy_, feel_, shape_, colour_, key_, len_, var_, boost_, r0, r1, r2, r3, s0, s1, s2, t0, t1) \
+    {name, {.style = style_, .mood = mood_, .energy = energy_, .feel = feel_, .shape = shape_, .colour = colour_, .key = key_, \
+            .length = len_, .variation = var_, .boost = boost_, .role = {r0, r1, r2, r3}, .sound = {s0, s1, s2, 0}, .take = {t0, t1, 0, 0}}}
 /* moods: 0 bright 1 warm 2 wistful 3 sad 4 dark 5 dreamy 6 tense; energies: 0 still .. 4 frantic; feels: 0 straight
  * 1 swung 2 waltz 3 lilting 4 odd; shapes: 0 loop 1 rise 2 fall 3 arch 4 q+a; colour 8 = aching; keys: 1 = C .. 12 = B;
  * lengths: 0..5 = 4, 8, 12, 16, 24, 32 bars */
@@ -41,10 +44,26 @@ static const mel_preset_t MEL_PRESET[] = {
     P("SCRAMBLE",         6, 4, 0, 1, 0, 7,  1, 5,   8, E, E, E, E, 3, 2, 4),   /* everything, at once, getting worse */
     P("SPIT AND POLISH",  0, 4, 0, 0, 0, 1,  0, 88,  0, E, E, E, E, 3, 2, 2),   /* four bright frantic bars */
     P("LIGHTS OUT",       3, 0, 2, 2, 8, 9,  3, 250, 0, E, E, E, X, 2, 3, 3),   /* a slow sad waltz that comes to rest */
+    /* the styles (PS: the style first; the last two: how the bass and the chords are played) */
+    PS("NIGHT FIGHTER",    MEL_CLUB,      4, 3, 0, 1, 0, 10, 3, 21,  0, E, E, E, E, 1, 3, 1, 0, 0),   /* house, dark, building */
+    PS("LAST TRAIN HOME",  MEL_CLUB,      3, 2, 1, 0, 0, 8,  1, 44,  0, E, E, Y, E, 1, 0, 0, 0, 7),   /* two-step, the chords off the beat */
+    PS("NAAFI BREAK",      MEL_STREET,    2, 1, 0, 0, 0, 6,  1, 12,  0, E, E, Y, E, 1, 0, 2, 0, 0),   /* boom-bap, a held chord, your tune */
+    PS("WIZARD PRANG",     MEL_FUNK,      1, 3, 0, 0, 0, 3,  1, 77,  2, E, E, E, E, 3, 2, 1, 3, 7),   /* funk: octaves in the bass, stabs off the beat */
+    PS("VICTORY ROLL",     MEL_FUNK,      0, 3, 1, 3, 0, 6,  2, 30,  0, E, E, E, E, 0, 1, 4, 0, 0),   /* second line */
+    PS("ISLAND HOP",       MEL_ISLAND,    1, 2, 0, 0, 0, 1,  1, 5,   0, E, E, E, E, 0, 1, 3, 2, 0),   /* one drop */
+    PS("FAIR WEATHER",     MEL_BREEZE,    5, 1, 0, 0, 0, 6,  1, 61,  0, E, E, Y, E, 0, 0, 3, 0, 2),   /* bossa, the chords climbing, your tune */
+    PS("FIESTA FLIGHT",    MEL_FIESTA,    0, 3, 0, 0, 0, 1,  1, 90,  0, E, E, E, E, 3, 4, 1, 0, 0),   /* salsa */
+    PS("MESS PIANO",       MEL_LOUNGE,    2, 2, 1, 4, 0, 11, 2, 140, 0, E, E, E, E, 0, 0, 0, 0, 0),   /* jazz: a walking bass, shell chords */
+    PS("MILK RUN",         MEL_ROADHOUSE, 0, 2, 0, 0, 0, 8,  1, 8,   0, E, E, E, E, 0, 4, 2, 0, 0),   /* the train beat */
+    PS("BEAT UP THE FIELD", MEL_ROADHOUSE, 1, 3, 1, 0, 0, 5,  2, 19,  0, E, E, E, E, 3, 1, 4, 0, 0),  /* a shuffle */
+    PS("AUTOBAHN",         MEL_MOTOR,     0, 3, 0, 1, 0, 3,  5, 2,   0, E, E, E, E, 1, 3, 1, 0, 0),   /* motorik: thirty-two bars, never varying */
+    PS("BANDITS AT SIX",   MEL_RUSH,      3, 4, 0, 3, 0, 4,  3, 303, 0, E, E, E, E, 4, 3, 1, 0, 0),   /* drum and bass */
+    PS("ABOVE THE WEATHER", MEL_DRIFT,    5, 0, 0, 3, 0, 8,  3, 200, 0, E, E, E, E, 2, 3, 3, 0, 1),   /* ambient: no pulse at all */
 };
 #undef E
 #undef Y
 #undef X
 #undef P
+#undef PS
 #define MEL_PRESETS (sizeof MEL_PRESET / sizeof MEL_PRESET[0])
 #endif

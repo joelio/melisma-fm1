@@ -2,9 +2,10 @@
 /* Melisma for the M-VAVE FM-1: a four-piece band you sit in with. A Merlin Engines instrument.
  * Built on Dinghy (platform.c and all below it: Felucca / SLOOP's platform). The design: docs/DESIGN.md.
  *
- *   KNOB1..4    mood, energy, feel, shape         with EDIT held: colour, boost, tempo, length
+ *   KNOB1..4    mood, energy, style, shape        with EDIT held: colour, boost, feel, length
  *   SELECT      the key                           with EDIT held: the key layout
- *   ALGORITHM   the variation                     PRESETS   the shipped pieces (EDIT held: the output level)
+ *   ALGORITHM   the variation                     with EDIT held: the tempo
+ *   PRESETS     the shipped pieces                with EDIT held: the output level
  *   FX SEL ENV LFO   bass, chords, melody, pulse. A tap: out, or back in, at the next bar. Held: the seat is yours.
  *               with GLO: its next sound. HOME: hold it as it is. SEQ: its next manner or idea. EDIT: it alone, while held
  *   ARP         a fill to the end of this bar; held: a build for as long as it is held
@@ -30,7 +31,7 @@ static void app_idle(void);
 #include "mel_splash.h"
 
 /* ---- the sequencer: the bar that plays, and the next one, ready before it is needed -------------------- */
-#define MAX_TRIG 160u
+#define MAX_TRIG 200u
 typedef struct { uint32_t at, len; uint8_t role, n, vel, note[3]; } trig_t;   /* in frames from the bar line */
 typedef struct {
     trig_t t[MAX_TRIG];
@@ -374,9 +375,9 @@ static void key_down(uint32_t k, uint32_t vel)
     held_n[k] = 0;
     if (note > 127u) return;
     if (role == MEL_PULSE) {                    /* the pulse seat: the keys are the three drums */
-        static const uint8_t DRUM[3] = {MEL_THUMP, MEL_SNAP, MEL_TICK};
-        pulse_ask = (uint32_t)DRUM[k % 3u] << 8 | vel;
-        (void)rec_begin(MEL_PULSE, DRUM[k % 3u], vel);
+        static const uint8_t DRUM[5] = {MEL_THUMP, MEL_SNAP, MEL_TICK, MEL_RIM, MEL_OPENHAT};
+        pulse_ask = (uint32_t)DRUM[k % 5u] << 8 | vel;
+        (void)rec_begin(MEL_PULSE, DRUM[k % 5u], vel);
         return;
     }
     held_note[k][held_n[k]++] = (uint8_t)note;
@@ -467,15 +468,14 @@ static void draw_words(uint32_t alt, uint32_t hot)   /* alt: EDIT is held; hot: 
     if (!alt) {
         draw_word(0, MEL_MOOD_NAME[p->mood], "mood", hot == 1u);
         draw_word(1, MEL_ENERGY_NAME[p->energy], "energy", hot == 2u);
-        draw_word(2, MEL_FEEL_NAME[p->feel], "feel", hot == 3u);
+        draw_word(2, MEL_STYLE_NAME[p->style], mel_groove(p) || p->style == MEL_FREE ? "style" : "in 4 only", hot == 3u);
         draw_word(3, MEL_SHAPE_NAME[p->shape], "shape", hot == 4u);
         return;
     }
     draw_word(0, MEL_COLOUR_NAME[p->colour], "colour", hot == 1u);
     e = putn(s, p->boost);
     draw_word(1, s, "boost", hot == 2u);
-    if (p->trim) putn(s, plan.tempo); else put(s, "AUTO");
-    draw_word(2, s, "tempo", hot == 3u);
+    draw_word(2, MEL_FEEL_NAME[p->feel], "feel", hot == 3u);
     e = putn(s, MEL_LENGTH_BARS[p->length]);
     put(e, " BARS");
     draw_word(3, s, "length", hot == 4u);
@@ -634,7 +634,7 @@ static void draw_card(void)                     /* the piece's code, to read acr
     }
     e = put(w, MEL_MOOD_NAME[p->mood]); e = put(e, " ");
     e = put(e, MEL_ENERGY_NAME[p->energy]); e = put(e, " ");
-    put(e, MEL_FEEL_NAME[p->feel]);
+    put(e, MEL_STYLE_NAME[p->style]);
     cv_begin(240, 24, C_BLACK);
     cv_text((240 - text_w(&FONT_S, w)) / 2, 2, &FONT_S, w, M_DIM);
     cv_blit(0, 216);
@@ -787,13 +787,21 @@ static void app_main(void)
             changed = 1, hot = 2;
             if (alt && p->boost == MEL_MAX_BOOST) say("THROUGH THE GATE", 0, "");
         }
-        if ((e = fm1_enc_take(ENC_KNOB3)) != 0 && (alt ? turn(&p->trim, e, MEL_TRIMS, 0) : turn(&p->feel, e, MEL_FEELS, 0))) changed = 1, hot = 3;
+        if ((e = fm1_enc_take(ENC_KNOB3)) != 0 && (alt ? turn(&p->feel, e, MEL_FEELS, 0) : turn(&p->style, e, MEL_STYLES, 0))) changed = 1, hot = 3;
         if ((e = fm1_enc_take(ENC_KNOB4)) != 0 && (alt ? turn(&p->length, e, MEL_LENGTHS, 0) : turn(&p->shape, e, MEL_SHAPES, 0))) changed = 1, hot = 4;
         if ((e = fm1_enc_take(ENC_SELECT)) != 0 && (alt ? turn(&p->layout, e, MEL_LAYOUTS, 0) : turn(&p->key, e, MEL_KEYS, 1))) changed = 1, hot = 5;
-        if ((e = fm1_enc_take(ENC_ALGORITHM)) != 0 && !alt) {
-            int32_t v = ((int32_t)p->variation + e) % (int32_t)MEL_VARIATIONS;
-            p->variation = (uint16_t)(v < 0 ? v + (int32_t)MEL_VARIATIONS : v);
-            changed = 1, hot = 6;
+        if ((e = fm1_enc_take(ENC_ALGORITHM)) != 0) {
+            if (alt) {                          /* the tempo, within what the energy (or the style) allows; all the way down: the engine's own */
+                if (turn(&p->trim, e, MEL_TRIMS, 0)) {
+                    mel_plan(p, &plan);
+                    if (p->trim) sayn("TEMPO ", plan.tempo); else say("TEMPO: THE ENGINE'S OWN", 0, "");
+                    changed = 1;
+                }
+            } else {
+                int32_t v = ((int32_t)p->variation + e) % (int32_t)MEL_VARIATIONS;
+                p->variation = (uint16_t)(v < 0 ? v + (int32_t)MEL_VARIATIONS : v);
+                changed = 1, hot = 6;
+            }
         }
         e = fm1_enc_take(ENC_PRESETS);          /* the shipped pieces; with EDIT held: the output level */
         if (e && !alt) {

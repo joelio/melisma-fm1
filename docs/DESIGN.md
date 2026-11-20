@@ -409,3 +409,18 @@ Built, and described for the player in docs/PILOTS-NOTES.md:
 - A load meter (EDIT held, bottom right): the longest audio block of the last two seconds, as a percentage.
 
 Not built from stage 1: recording a whole performance as a take; the hidden engineering page.
+
+### Added 20 November 2026: styles (stage 2 of docs/PLAN.md)
+
+- A style dial (KNOB3; feel moved to EDIT + KNOB3, tempo to EDIT + ALGORITHM): FREE and eleven styles, each a
+  groove in the engine (`MEL_GROOVE` in mel_engine.h) with a straight and, for three of them, a different swung form.
+- A groove gives drum rows and, where the research was sure of them, a bass row and a chord rhythm; anything else
+  is written by the engine as before. Left out as unverified: afrobeat, baião, bembé, Balkan drum voicings, trap,
+  the salsa kick, and the chord rhythms of house, funk, second line and two-step (the engine writes those).
+- Energy sets the tempo within the style's range and thins the drums; it never adds notes.
+- Sevenths for LOUNGE and BREEZE as rootless chords (third, fifth, seventh).
+- Two more drum sounds: a rim click and an open hat (the closed tick chokes it).
+- Fourteen style presets (38 in all).
+
+Not built from stage 2: a major chord on the fifth for FIESTA in minor moods; the 12-bar form for the shuffle;
+the larger 808/909 kit (clap, toms, cowbell).

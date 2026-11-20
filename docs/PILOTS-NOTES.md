@@ -17,11 +17,11 @@ yourself on the keys. Nothing is random: the same settings always give the same 
 |---|---|---|
 | KNOB1 | Mood: bright, warm, wistful, sad, dark, dreamy, tense | Colour: the scale, chosen apart from the mood |
 | KNOB2 | Energy: still, calm, moving, driving, frantic | Boost: 0 to 11 |
-| KNOB3 | Feel: straight, swung, waltz, lilting, odd | Tempo, within the energy's range (AUTO lets the engine choose) |
+| KNOB3 | Style: free, club, street, funk, island, breeze, fiesta, lounge, roadhouse, motor, rush, drift | Feel: straight, swung, waltz, lilting, odd |
 | KNOB4 | Shape: loop, rise, fall, arch, question and answer | Length: 4 to 32 bars |
 | SELECT | Key (turn below C for AUTO) | Key layout: degrees, snapped, chromatic |
-| ALGORITHM | Variation: another piece from the same words (0 to 1023) | |
-| PRESETS | The shipped pieces, 24 of them | Output level, −6 to +6 |
+| ALGORITHM | Variation: another piece from the same words (0 to 1023) | Tempo, within what the energy or style allows. All the way down: the engine's own |
+| PRESETS | The shipped pieces, 38 of them | Output level, −6 to +6 |
 | MASTER | Volume | |
 | FX, SCL, ENV, LFO | The four parts: bass, chords, melody, pulse. **Tap:** the part drops out, or comes back, at the next bar. **Hold half a second:** the seat is yours | That part alone, for as long as you hold it |
 | GLO + a part's button | That part's next sound (five each for bass, chords, melody) | |
@@ -46,11 +46,43 @@ the piece. Press **PLAY**. That is all that is needed to make music.
 
 - **Mood** chooses the scale. *Bright* is major, *sad* is minor, and the others sit between and beyond.
 - **Energy** moves three things together: how many notes, how high, how fast.
-- **Feel** is how the bar is counted: four straight, four swung, three (waltz), six (lilting), seven (odd).
+- **Style** is the band's rhythmic language (see below). *Free* is the engine writing everything itself.
+- **Feel** (EDIT + KNOB3) is how the bar is counted: four straight, four swung, three (waltz), six (lilting),
+  seven (odd).
 - **Shape** is what the piece does over its length: stay level, build, ease off, build then ease, or ask a
   question and answer it.
 - **Boost** pushes the whole piece harder. It goes to eleven.
 - **Variation** gives a different piece from the same words. Note the number and you can always come back.
+
+### The styles
+
+A style gives the drums their pattern and, where the idiom has one, the bass its line and the chords their
+rhythm. Whatever a style does not specify, the engine writes as before, and the melody is always the engine's or
+yours. Many styles have a second form when the feel is *swung*.
+
+| Style | Straight feel | Swung feel | Tempo |
+|---|---|---|---|
+| FREE | The engine's own writing | The same, swung | By energy, 60 to 170 |
+| CLUB | House: kick on every beat, a tick on every offbeat | Two-step garage | 118 to 138 |
+| STREET | Boom-bap: loud snare on two and four, lazy kicks, one held chord | The same | 84 to 96 |
+| FUNK | Funk: a heavy first beat, ghosted snares, an opening hat | New Orleans second line | 90 to 120 |
+| ISLAND | Reggae one drop: nothing on the first beat, chords on the offbeats | The same | 65 to 85 |
+| BREEZE | Bossa nova: quiet and even, a rim-click figure, a bass that arrives early | The same | 60 to 75 |
+| FIESTA | Salsa: the clave, a bass that avoids the first beat, a piano figure | The same | 80 to 110 |
+| LOUNGE | Jazz: ride cymbal, a walking bass, chords with sevenths | The same | 110 to 200 |
+| ROADHOUSE | Country train beat: brushes, root and fifth | Shuffle blues | 70 to 130 |
+| MOTOR | Motorik: it never varies, and takes no fills | The same | 120 to 150 |
+| RUSH | Drum and bass: fast drums over a slow bass and a held chord | The same | 160 to 175 |
+| DRIFT | Ambient: no drums at all | The same | 60 to 90 |
+
+- **Energy** moves the tempo through the style's own range, and thins the drums when low: at *still* only kick
+  and snare remain, at *calm* half the hats. It never adds notes the style does not have.
+- A style applies when the feel is straight or swung. In waltz, lilting and odd the band plays free, and the
+  style's label reads "in 4 only".
+- The ways of playing in section 9 work inside a style too.
+
+Only patterns that could be checked against a source, or are standard beyond doubt, are included.
+`RESEARCH-NOTES.md` lists them and the ones left out.
 
 ## 5. Seats
 
@@ -72,7 +104,7 @@ Hold **EDIT** and a part's button to hear that part alone for as long as you hol
 - **Melody seat:** single notes.
 - **Bass seat:** the same keys, two octaves down.
 - **Chords seat:** one key plays the whole chord built on that note.
-- **Pulse seat:** the keys are the three drums, repeating along the keyboard.
+- **Pulse seat:** the keys are the five drums (thump, snap, tick, rim, open hat), repeating along the keyboard.
 
 ## 6. The keys, and wrong notes
 
@@ -179,7 +211,6 @@ Full detail, with sources: [FLASHING-SAFETY.md](FLASHING-SAFETY.md).
 ## 14. Known limits of the Mark I
 
 - The share code is shown but cannot yet be typed in.
-- One rhythmic style only: the style dial is the next stage of work.
 - No reverb or other effects; the sound is dry.
 - The keys do not yet sense how hard they are played.
 - MIDI clock is not followed.

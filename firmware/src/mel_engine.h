@@ -34,7 +34,7 @@ enum { MEL_DEGREES, MEL_SNAPPED, MEL_CHROMATIC };           /* key layout */
 #define MEL_SOUNDS 8u
 #define MEL_LAYOUTS 3u
 #define MEL_TRIMS 16u                           /* 0 = the engine chooses */
-#define MEL_STYLES 1u                           /* (one so far: the evenly spread engine; the code has room for 16) */
+#define MEL_STYLES 12u                          /* the first is FREE: the evenly spread engine (the code has room for 16) */
 #define MEL_TAKES 8u                            /* a part's own idea: another take of the same piece */
 #define MEL_MAX_BOOST 11u
 
@@ -54,6 +54,10 @@ static const char *const MEL_COLOUR_NAME[MEL_COLOURS] = {"AUTO", "BRIGHT", "WARM
 static const char *const MEL_KEY_NAME[12] = {"C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"};
 static const char *const MEL_ROLE_NAME[MEL_ROLES] = {"BASS", "CHORDS", "MELODY", "PULSE"};
 static const char *const MEL_LAYOUT_NAME[MEL_LAYOUTS] = {"DEGREES", "SNAPPED", "CHROMATIC"};
+enum { MEL_FREE, MEL_CLUB, MEL_STREET, MEL_FUNK, MEL_ISLAND, MEL_BREEZE, MEL_FIESTA, MEL_LOUNGE, MEL_ROADHOUSE, MEL_MOTOR,
+       MEL_RUSH, MEL_DRIFT };
+static const char *const MEL_STYLE_NAME[MEL_STYLES] = {"FREE", "CLUB", "STREET", "FUNK", "ISLAND", "BREEZE", "FIESTA", "LOUNGE",
+                                                       "ROADHOUSE", "MOTOR", "RUSH", "DRIFT"};
 /* a take of the chords or the bass is a manner of playing it; of the melody or the pulse, another idea */
 enum { MEL_WRITTEN, MEL_ROOTS, MEL_FIFTHS, MEL_OCTAVES, MEL_WALK, MEL_TRIAD, MEL_PEDAL, MEL_PUSH };
 static const char *const MEL_BASS_NAME[MEL_TAKES] = {"WRITTEN", "ROOTS", "FIFTHS", "OCTAVES", "WALK", "TRIAD", "PEDAL", "PUSH"};
@@ -182,6 +186,73 @@ static uint32_t mel_noise(uint32_t seed, uint32_t role, uint32_t bar, uint32_t i
     return mel_mix(h ^ salt * 0x85EBCA6Bu);
 }
 
+/* ---- styles: the band's rhythmic language ----------------------------------------------------------------
+ * A style in four (the STRAIGHT and SWUNG feels) has a groove: where the drums fall, and, where the idiom has one,
+ * the bass's line and the chords' rhythm. A part the groove does not give is written by the engine as ever, and so
+ * is everything in three, six and seven. Rows are steps of the bar (16, or 12 for a triplet feel):
+ *   drums    X accented, x struck, o a ghost, . rest
+ *   bass     R root, 3 5 6 7 the chord's and scale's other notes, 8 the octave, N the next chord's root (arriving
+ *            early), a a step below the next root, t the chord's next note up (a walk)
+ *   chords   x struck
+ * Only patterns that could be checked against a source, or are standard beyond doubt, are here: docs/RESEARCH-NOTES.md
+ * section 5 has them with their sources, and the ones left out. Energy thins a groove (the hats go first, then the
+ * ghosts) and never adds what the idiom does not have. */
+#define MEL_THUMP 36u                           /* the pulse's notes: which sound, not which pitch */
+#define MEL_RIM 37u
+#define MEL_SNAP 38u
+#define MEL_TICK 42u
+#define MEL_OPENHAT 46u
+#define MEL_G_OPENX 1u                          /* a hat's X is an open hat (else an accent) */
+#define MEL_G_SEVENTHS 2u                       /* the chords are the third, fifth and seventh: the bass has the root */
+#define MEL_G_ARP 4u                            /* the chords' row is played a note at a time */
+#define MEL_G_BOOGIE 8u                         /* the chords' row is root and fifth, root and sixth, beat by beat */
+#define MEL_G_NOFILL 16u                        /* it never varies: no fills */
+typedef struct {
+    const char *k, *k2, *s, *h, *b, *b2, *c;    /* kick (k2: every other bar), snare, hat, bass (b2 likewise), chords; 0: none / the engine's */
+    uint8_t steps, swing, lo, hi, snare, bgate, cgate, flags;   /* swing: the first of a pair of steps takes this much of it (%) */
+} mel_groove_t;
+enum { MEL_GR_HOUSE, MEL_GR_TWOSTEP, MEL_GR_BOOMBAP, MEL_GR_FUNK, MEL_GR_SECONDLINE, MEL_GR_ONEDROP, MEL_GR_BOSSA, MEL_GR_SALSA,
+       MEL_GR_JAZZ, MEL_GR_TRAIN, MEL_GR_SHUFFLE, MEL_GR_MOTORIK, MEL_GR_DNB, MEL_GR_AMBIENT, MEL_GROOVES };
+static const mel_groove_t MEL_GROOVE[MEL_GROOVES] = {
+    /* house: the kick on every beat, a tick on every offbeat */
+    {"x...x...x...x...", 0, "....x.......x...", "..X...X...X...X.", "..R...8...R...8.", 0, 0, 16, 50, 118, 128, MEL_SNAP, 55, 0, 0},
+    /* two-step garage: no kick on two, three or four, and a heavy skip */
+    {"x.o.......x.....", 0, "....X..o.o..X...", "..Xo..Xo..Xo..Xo", "..R..RR.R..R.R.R", 0, 0, 16, 58, 128, 138, MEL_SNAP, 60, 0, 0},
+    /* boom-bap: a loud snare on two and four, lazy kicks between, one chord held */
+    {"x......x..x.....", "x......x.xx.....", "....X.......X...", "x.x.x.x.x.x.x.x.", "R......R..R.....", 0, "x...............", 16, 60, 84, 96, MEL_SNAP, 90, 95, 0},
+    /* funk: the heavy one, ghosted snares, the hat opening before two and four come round */
+    {"x.x.......x..x..", 0, "....X..o.o.oX..o", "xxxxxxxXxxxxxXxx", 0, 0, 0, 16, 50, 96, 116, MEL_SNAP, 0, 0, MEL_G_OPENX},
+    /* second line: a rolling snare in three-three-two, between straight and swung */
+    {"x.......x.....x.", 0, "XooXooXoXooXooXo", "....x.......x...", "R.......5.....a.", 0, 0, 16, 57, 90, 120, MEL_SNAP, 80, 0, 0},
+    /* one drop: nothing on the one, kick and rim together on the drop, the chord on every offbeat */
+    {"....x.......x...", 0, "....x.......x...", "x.X.x.X.x.X.x.X.", 0, 0, "..x...x...x...x.", 16, 50, 65, 85, MEL_RIM, 0, 45, 0},
+    /* bossa nova: quiet and even, the rim's figure over it, a bass that arrives early */
+    {"x..xx..xx..xx..x", 0, "x..x..x...x..x..", "xxxxxxxxxxxxxxxx", "R..55..NR..55..N", 0, 0, 16, 50, 60, 75, MEL_RIM, 85, 0, MEL_G_SEVENTHS},
+    /* salsa: the clave (two-three), the shell pattern, a bass that avoids the one, the piano's montuno */
+    {0, 0, "..x.x...x..x..x.", "x.x.xx.xx.xx.x.x", "...5..N....5..N.", 0, "x.xx.x.x.x.x.x.x", 16, 50, 80, 110, MEL_RIM, 95, 80, MEL_G_ARP},
+    /* jazz: the ride, the hat's chick on two and four, four to the bar in the bass */
+    {"o..o..o..o..", 0, "...x.....x..", "x..x.xx..x.x", "R..t..t..a..", 0, "x....x......", 12, 50, 110, 200, MEL_RIM, 92, 40, MEL_G_SEVENTHS},
+    /* the train beat: brushes all the way through, root and fifth */
+    {"x...x...x...x...", 0, "ooXoooXoooXoooXo", 0, "R...5...R...5...", 0, "..x...x...x...x.", 16, 50, 90, 130, MEL_SNAP, 80, 45, 0},
+    /* shuffle: long and short on every part */
+    {"x.....x.....", 0, "...X.....X..", "x.xx.xx.xx.x", "R.R3.35.56.6", "7.76.65.53.3", "x.xx.xx.xx.x", 12, 50, 70, 130, MEL_SNAP, 80, 70, MEL_G_BOOGIE},
+    /* motorik: it never varies */
+    {"x.x...x.x.x...x.", 0, "....x.......x...", "x.x.x.x.x.x.x.x.", "R.R.R.R.R.R.R.R.", 0, "x.x.x.x.x.x.x.x.", 16, 50, 120, 150, MEL_SNAP, 70, 60, MEL_G_NOFILL},
+    /* drum and bass: fast drums over a slow bass and a held chord */
+    {"x.........x.....", 0, "....X.......X...", "x.x.x.x.x.x.x.x.", "R.........R.....", 0, "x...............", 16, 50, 160, 175, MEL_SNAP, 95, 97, 0},
+    /* ambient: no pulse at all */
+    {0, 0, 0, 0, "R...............", 0, "x...............", 16, 50, 60, 90, MEL_SNAP, 97, 99, MEL_G_NOFILL},
+};
+static const mel_groove_t *mel_groove(const mel_piece_t *p)   /* the groove a piece is played in; 0: the engine writes it all */
+{
+    static const uint8_t PICK[MEL_STYLES][2] = {   /* by style, in the straight feel and the swung */
+        {0, 0}, {MEL_GR_HOUSE, MEL_GR_TWOSTEP}, {MEL_GR_BOOMBAP, MEL_GR_BOOMBAP}, {MEL_GR_FUNK, MEL_GR_SECONDLINE},
+        {MEL_GR_ONEDROP, MEL_GR_ONEDROP}, {MEL_GR_BOSSA, MEL_GR_BOSSA}, {MEL_GR_SALSA, MEL_GR_SALSA}, {MEL_GR_JAZZ, MEL_GR_JAZZ},
+        {MEL_GR_TRAIN, MEL_GR_SHUFFLE}, {MEL_GR_MOTORIK, MEL_GR_MOTORIK}, {MEL_GR_DNB, MEL_GR_DNB}, {MEL_GR_AMBIENT, MEL_GR_AMBIENT}};
+    if (p->style == MEL_FREE || p->style >= MEL_STYLES || p->feel > 1u) return 0;
+    return &MEL_GROOVE[PICK[p->style][p->feel]];
+}
+
 /* ---- the plan: what the settings decide for the whole piece -------------------------------------------- */
 static const uint8_t MEL_MODE[8][7] = {         /* the colours, as semitones above the home note */
     {0, 2, 4, 5, 7, 9, 11},                     /* bright: major */
@@ -223,6 +294,7 @@ static int mel_engine_plays(const mel_piece_t *p, uint32_t role)
 static void mel_plan(const mel_piece_t *p, mel_plan_t *pl)
 {
     uint32_t seed = p->variation, lo = MEL_TEMPO[p->energy][0], hi = MEL_TEMPO[p->energy][1], t, i, r;
+    const mel_groove_t *g = mel_groove(p);
     const uint8_t *m;
     pl->mode = p->colour ? (uint8_t)(p->colour - 1u) : p->mood;
     pl->tonic = p->key ? (uint8_t)(p->key - 1u) : MEL_AUTO_TONIC[mel_noise(seed, 0, ~0u, ~0u, MEL_SALT_TONIC) % 7u];
@@ -232,6 +304,10 @@ static void mel_plan(const mel_piece_t *p, mel_plan_t *pl)
     pl->boost = p->boost;
     pl->push = 0;
     t = lo + mel_noise(seed, 0, ~0u, ~0u, MEL_SALT_TEMPO) % (hi - lo + 1u);
+    if (g) {                                    /* a style has its own tempos: the energy moves through them */
+        lo = g->lo; hi = g->hi;
+        t = lo + (hi - lo) * p->energy / (MEL_ENERGIES - 1u);
+    }
     t += (hi - t) * p->boost / MEL_MAX_BOOST;   /* the dial pushes it to the top of its band, never out of it */
     if (p->trim) t = lo + (hi - lo) * (p->trim - 1u) / (MEL_TRIMS - 2u);
     pl->tempo = (uint16_t)t;
@@ -243,6 +319,7 @@ static void mel_plan(const mel_piece_t *p, mel_plan_t *pl)
         ratio = 256u + (ratio - 256u) * 154u / 256u;   /* a band, not a ride cymbal: 0.6 of the way */
         pl->swing = (uint8_t)(MEL_LEAF_TICKS * ratio / (ratio + 256u));
     }
+    if (g) pl->swing = g->steps == 12u ? 64u : 0u;   /* what the engine writes itself sits on the groove's own grid */
     pl->gate = (uint8_t)MEL_CUE[p->mood][0];
     pl->attack = (uint8_t)MEL_CUE[p->mood][1];
     pl->bright = MEL_CUE[p->mood][2];
@@ -326,10 +403,7 @@ static int32_t mel_into(int32_t pc, int32_t lo)   /* a pitch class, in the octav
 }
 
 /* ---- one role's bar ------------------------------------------------------------------------------------ */
-#define MEL_MAX_EV 28u
-#define MEL_THUMP 36u                           /* the pulse's notes: which sound, not which pitch */
-#define MEL_SNAP 38u
-#define MEL_TICK 42u
+#define MEL_MAX_EV 40u
 typedef struct {                                /* (no padding) */
     uint16_t at, len;                           /* ticks from the bar line; how long it is held */
     uint8_t note[3], n, vel, spare;
@@ -391,6 +465,99 @@ static uint32_t mel_place(const mel_piece_t *p, const mel_plan_t *pl, uint32_t r
     return k;
 }
 
+/* a role's bar from the groove's rows */
+static uint32_t mel_gtick(const mel_groove_t *g, uint32_t s)
+{
+    if (g->steps == 12u) return s * 32u;
+    return (s >> 1) * 48u + (s & 1u ? 48u * g->swing / 100u : 0u);
+}
+static uint32_t mel_groove_bar(const mel_piece_t *p, const mel_plan_t *pl, const mel_groove_t *g, uint32_t role, uint32_t bar, mel_ev_t *ev)
+{
+    uint32_t n = 0, s, t = mel_tension(p, pl, bar), total = mel_bar_ticks(pl), root = mel_degree(p, pl, bar) - 1u, en = p->energy, seen = 0, i;
+    int32_t base = 33 + (int32_t)t * 79 / 100 + (en >= 3u ? 6 : 0);
+    if (role == MEL_PULSE) {
+        const char *row[3];
+        uint32_t r;
+        row[0] = (bar & 1u) && g->k2 ? g->k2 : g->k; row[1] = g->s; row[2] = g->h;
+        for (s = 0; s < g->steps; s++)
+            for (r = 0; r < 3u; r++) {
+                char c = row[r] ? row[r][s] : '.';
+                int32_t vel = base + (c == 'X' ? 14 : c == 'o' ? -28 : 0) + (r == 0u ? 8 : r == 2u ? -10 : 0);
+                mel_ev_t *e = &ev[n];
+                if (c == '.' || n >= MEL_MAX_EV) continue;
+                if (c == 'o' && en < 2u) continue;                                   /* the ghost notes come with energy */
+                if (r == 2u && (en == 0u || (en == 1u && (seen++ & 1u)))) continue;  /* the hats: none when still, half when calm */
+                e->at = (uint16_t)(mel_gtick(g, s) + r);   /* (a tick apart, so each is its own strike) */
+                e->len = 1; e->n = 1; e->note[1] = e->note[2] = e->spare = 0;
+                e->note[0] = (uint8_t)(r == 0u ? MEL_THUMP : r == 1u ? g->snare : c == 'X' && (g->flags & MEL_G_OPENX) ? MEL_OPENHAT : MEL_TICK);
+                e->vel = (uint8_t)(vel < 20 ? 20 : vel > 127 ? 127 : vel);
+                n++;
+            }
+        return n;
+    }
+    if (role == MEL_BASS) {
+        const char *row = (bar & 1u) && g->b2 ? g->b2 : g->b;
+        int32_t rootn = mel_into(mel_step_midi(pl, (int32_t)root), MEL_BASS_LO), st = mel_step_near(pl, rootn), walk = 0;
+        int32_t nextn = mel_into(mel_step_midi(pl, (int32_t)mel_degree(p, pl, bar + 1u) - 1), MEL_BASS_LO);
+        for (s = 0; s < g->steps && n < MEL_MAX_EV; s++) {
+            char c = row[s];
+            int32_t note = rootn, vel = base + (s == 0u ? 12 : 0);
+            mel_ev_t *e = &ev[n];
+            if (c == '.') continue;
+            if ((en == 0u && n) || (en == 1u && (seen++ & 1u))) continue;   /* with little energy: fewer of them */
+            if (c == '3' || c == '5' || c == '6' || c == '7') note = mel_into(mel_step_midi(pl, st + (c - '1')), MEL_BASS_LO);
+            else if (c == '8') note = rootn + 12;
+            else if (c == 'N') note = s >= g->steps / 2u ? nextn : rootn;
+            else if (c == 't') note = mel_into(mel_step_midi(pl, st + 2 * ++walk), MEL_BASS_LO);
+            else if (c == 'a') {
+                int32_t a = mel_step_near(pl, nextn) - 1;
+                note = mel_step_midi(pl, a) < MEL_BASS_LO ? mel_step_midi(pl, a + 2) : mel_step_midi(pl, a);
+            }
+            e->at = (uint16_t)mel_gtick(g, s); e->len = 1; e->n = 1; e->note[1] = e->note[2] = e->spare = 0;
+            e->note[0] = (uint8_t)note;
+            e->vel = (uint8_t)(vel < 20 ? 20 : vel > 127 ? 127 : vel);
+            n++;
+        }
+        for (i = 0; i < n; i++) {
+            uint32_t len = ((i + 1u < n ? ev[i + 1u].at : total) - ev[i].at) * g->bgate / 100u;
+            ev[i].len = (uint16_t)(len ? len : 1u);
+        }
+        return n;
+    }
+    {                                           /* the chords */
+        static const uint8_t TURN[4] = {0, 1, 2, 1};
+        uint8_t tone[3];
+        uint32_t a, hits = 0, sev = g->flags & MEL_G_SEVENTHS ? 2u : 0u;
+        int32_t rootc = mel_into(mel_step_midi(pl, (int32_t)root), MEL_CHORD_LO), stc = mel_step_near(pl, rootc);
+        for (i = 0; i < 3u; i++) tone[i] = (uint8_t)mel_into(mel_step_midi(pl, (int32_t)(root + sev + 2u * i)), MEL_CHORD_LO);
+        for (i = 1; i < 3u; i++)
+            for (a = i; a && tone[a - 1u] > tone[a]; a--) { uint8_t x = tone[a]; tone[a] = tone[a - 1u]; tone[a - 1u] = x; }
+        if (p->take[MEL_CHORDS] == MEL_OPEN) { uint8_t x = (uint8_t)(tone[1] + 12u); tone[1] = tone[2]; tone[2] = x; }
+        for (s = 0; s < g->steps && n < MEL_MAX_EV; s++) {
+            mel_ev_t *e = &ev[n];
+            int32_t vel = base - 8 + (s == 0u ? 6 : 0);
+            if (g->c[s] == '.') continue;
+            if ((en == 0u && n) || (en == 1u && (seen++ & 1u))) continue;
+            e->at = (uint16_t)mel_gtick(g, s); e->len = 1; e->spare = 0;
+            e->note[0] = tone[0]; e->note[1] = tone[1]; e->note[2] = tone[2]; e->n = 3;
+            if (p->take[MEL_CHORDS] >= MEL_CLIMB) {}   /* (a manner of its own: whole chords, for it to work on) */
+            else if (g->flags & MEL_G_ARP) { e->note[0] = tone[TURN[hits & 3u]]; e->note[1] = e->note[2] = 0; e->n = 1; }
+            else if (g->flags & MEL_G_BOOGIE) {
+                e->note[0] = (uint8_t)rootc;
+                e->note[1] = (uint8_t)mel_step_midi(pl, stc + (s / 3u & 1u ? 5 : 4));
+                e->note[2] = 0; e->n = 2;
+            }
+            e->vel = (uint8_t)(vel < 20 ? 20 : vel > 127 ? 127 : vel);
+            hits++; n++;
+        }
+        for (i = 0; i < n; i++) {
+            uint32_t len = ((i + 1u < n ? ev[i + 1u].at : total) - ev[i].at) * g->cgate / 100u;
+            ev[i].len = (uint16_t)(len ? len : 1u);
+        }
+        return n;
+    }
+}
+
 /* put a note into a bar, in its place in time; one already there at that moment becomes it */
 static uint32_t mel_add(mel_ev_t *ev, uint32_t n, uint32_t at, uint32_t note, uint32_t len, uint32_t vel)
 {
@@ -415,11 +582,14 @@ static uint32_t mel_add(mel_ev_t *ev, uint32_t n, uint32_t at, uint32_t note, ui
 static uint32_t mel_bar(const mel_piece_t *p, const mel_plan_t *pl, uint32_t role, uint32_t bar, uint32_t fill, mel_ev_t *ev)
 {
     uint8_t slot[MEL_MAX_EV];
-    uint32_t sub, k = mel_place(p, pl, role, bar, slot, &sub), j, t = mel_tension(p, pl, bar);
+    const mel_groove_t *g = mel_groove(p);
+    uint32_t grooved = g && (role == MEL_PULSE || (role == MEL_BASS && g->b) || (role == MEL_CHORDS && g->c));
+    uint32_t sub = 1, k = grooved ? mel_groove_bar(p, pl, g, role, bar, ev) : mel_place(p, pl, role, bar, slot, &sub), j, t = mel_tension(p, pl, bar);
     uint32_t root = mel_degree(p, pl, bar) - 1u, total = mel_bar_ticks(pl), seed = p->variation | (role >= MEL_MELODY ? (uint32_t)p->take[role] << 10 : 0u);
     int32_t lo = MEL_MELODY_LO + MEL_ENERGY_LIFT[p->energy], hi = lo + MEL_MELODY_SPAN, step = 0;
     int32_t target = lo + 3 + (hi - lo - 6) * (int32_t)t / 100;
-    for (j = 0; j < k; j++) {
+    if (g && (g->flags & MEL_G_NOFILL)) fill = 0;
+    for (j = 0; j < k && !grooved; j++) {
         mel_ev_t *e = &ev[j];
         uint32_t at = mel_slot_tick(pl, slot[j], sub), next = j + 1u < k ? mel_slot_tick(pl, slot[j + 1u], sub) : total;
         uint32_t leaf = slot[j] / sub, gap = next - at;
@@ -440,7 +610,7 @@ static uint32_t mel_bar(const mel_piece_t *p, const mel_plan_t *pl, uint32_t rol
         case MEL_CHORDS: {
             uint32_t i, a;
             for (i = 0; i < 3u; i++)             /* a triad, folded into one octave: the voices move as little as they can */
-                e->note[i] = (uint8_t)mel_into(mel_step_midi(pl, (int32_t)(root + 2u * i)), MEL_CHORD_LO);
+                e->note[i] = (uint8_t)mel_into(mel_step_midi(pl, (int32_t)(root + 2u * i + (g && (g->flags & MEL_G_SEVENTHS) ? 2u : 0u))), MEL_CHORD_LO);
             for (i = 1; i < 3u; i++)
                 for (a = i; a && e->note[a - 1u] > e->note[a]; a--) {
                     uint8_t x = e->note[a]; e->note[a] = e->note[a - 1u]; e->note[a - 1u] = x;
@@ -492,9 +662,9 @@ static uint32_t mel_bar(const mel_piece_t *p, const mel_plan_t *pl, uint32_t rol
         static const uint8_t TRIAD[4] = {0, 2, 4, 2};
         uint32_t m = p->take[role], half = (pl->leaves + 1u) / 2u * MEL_LEAF_TICKS;
         int32_t rootn = mel_into(mel_step_midi(pl, (int32_t)root), MEL_BASS_LO), st = mel_step_near(pl, rootn);
-        if (m >= MEL_FIFTHS && m <= MEL_TRIAD && k == 1u) {   /* (it takes two notes to tell: the bar's one note becomes two) */
+        if (m >= MEL_FIFTHS && m <= MEL_TRIAD && k == 1u && ev[0].at + 8u < half) {   /* (it takes two notes to tell: the bar's one note becomes two) */
             ev[1] = ev[0];
-            if (ev[0].len + 4u > half) ev[0].len = (uint16_t)(half - 4u);
+            if (ev[0].at + ev[0].len + 4u > half) ev[0].len = (uint16_t)(half - ev[0].at - 4u);
             ev[1].at = (uint16_t)half; ev[1].len = (uint16_t)((total - half) * 85u / 100u);
             ev[1].vel = (uint8_t)(ev[1].vel > 26u ? ev[1].vel - 6u : 20u);
             k = 2;
@@ -509,12 +679,13 @@ static uint32_t mel_bar(const mel_piece_t *p, const mel_plan_t *pl, uint32_t rol
         if (m == MEL_PUSH)                      /* a pickup: the next bar's root, half a pulse early */
             k = mel_add(ev, k, total - MEL_LEAF_TICKS / 2u, (uint32_t)mel_into(mel_step_midi(pl, (int32_t)mel_degree(p, pl, bar + 1u) - 1), MEL_BASS_LO), 40, 92);
     }
-    if (role == MEL_PULSE && p->take[role]) {   /* the pulse's ideas: a backbeat, a pickup, a late snap, a push */
+    if (role == MEL_PULSE && p->take[role] && !(grooved && !k)) {   /* the pulse's ideas: a backbeat, a pickup, a late snap, a push */
         uint32_t m = p->take[role], mid = pl->leaves / 2u, sw = pl->swing && !pl->eighths ? pl->swing : MEL_LEAF_TICKS / 2u;
-        if (m == 1u || m == 5u || m == 7u) k = mel_add(ev, k, mid * MEL_LEAF_TICKS, MEL_SNAP, 8, 100);
-        if (m == 2u || m == 5u || m == 7u) k = mel_add(ev, k, (pl->leaves - 1u) * MEL_LEAF_TICKS + sw, MEL_THUMP, 8, 88);
-        if (m == 3u || m == 6u || m == 7u) k = mel_add(ev, k, (pl->leaves - 1u) * MEL_LEAF_TICKS, MEL_SNAP, 8, 96);
-        if (m == 4u || m == 6u) k = mel_add(ev, k, mid * MEL_LEAF_TICKS + sw, MEL_THUMP, 8, 90);
+        uint32_t sn = grooved ? 1u : 0u, len = grooved ? 1u : 8u;   /* (in a groove each drum has its own tick) */
+        if (m == 1u || m == 5u || m == 7u) k = mel_add(ev, k, mid * MEL_LEAF_TICKS + sn, MEL_SNAP, len, 100);
+        if (m == 2u || m == 5u || m == 7u) k = mel_add(ev, k, (pl->leaves - 1u) * MEL_LEAF_TICKS + sw, MEL_THUMP, len, 88);
+        if (m == 3u || m == 6u || m == 7u) k = mel_add(ev, k, (pl->leaves - 1u) * MEL_LEAF_TICKS + sn, MEL_SNAP, len, 96);
+        if (m == 4u || m == 6u) k = mel_add(ev, k, mid * MEL_LEAF_TICKS + sw, MEL_THUMP, len, 90);
     }
     if (role == MEL_CHORDS && p->take[role] >= MEL_CLIMB && k) {   /* the chords, played another way */
         mel_ev_t c = ev[0], blk[8];
