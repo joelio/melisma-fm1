@@ -14,6 +14,15 @@
 20000 enc 2 1
 20100 enc 5 1
 21000 shot
+22000 btn 13
+22600 keys 1
+23100 keys 0
+23300 keys 16
+23900 keys 0
+24400 keys 4
+25200 keys 0
+26500 btn 13
+27500 shot
 29000 btn 3
 29500 keys 1
 30500 keys 4

@@ -9,6 +9,7 @@
  *   PRESETS     the shipped pieces                with EDIT held: the output level
  *   GLO + a role button   that role's next sound  HOME + a role button   hold that part as it is
  *   PLAY        start and stop                    OCT- OCT+   your octave
+ *   REC         keep what you play: it loops with the piece, and you can play over it again. HOME + REC: clear it
  *   keys        you, in the seat you took (or over the band's melody), in the layout chosen
  *
  * A dial turned while the band plays takes effect at the next bar line. The engine (mel_engine.h) is a pure
@@ -24,7 +25,7 @@ static void app_idle(void);
 #include "mel_splash.h"
 
 /* ---- the sequencer: the bar that plays, and the next one, ready before it is needed -------------------- */
-#define MAX_TRIG 96u
+#define MAX_TRIG 160u
 typedef struct { uint32_t at, len; uint8_t role, n, vel, note[3]; } trig_t;   /* in frames from the bar line */
 typedef struct {
     trig_t t[MAX_TRIG];
@@ -116,10 +117,77 @@ static struct {                                 /* what survives a power-off */
 } set;
 static mel_plan_t plan;
 
+/* ---- your phrase: what you played while REC was lit, looping with the piece -----------------------------
+ * A note is kept as a step of the scale, not as a pitch: turn the mood or the key and the phrase moves with the
+ * band, still with no wrong notes. Time is kept as a part of the bar, so a change of tempo or feel carries it too. */
+#define PHRASE_MAX 400u
+typedef struct { uint16_t at, len; uint8_t bar, role, step, vel; } pnote_t;   /* at: bar / 65536; len: bars / 256 (0: still held); role | semitones above the step << 4 */
+static struct { uint16_t n, spare; pnote_t note[PHRASE_MAX]; } phrase;
+static uint32_t rec_on, phrase_dirty, phrase_new;
+static uint16_t held_rec[27][3];                /* the phrase note each key is writing (+1) */
+
+static void push_trig(barbuf_t *b, const trig_t *t)   /* in order of time */
+{
+    uint32_t i;
+    if (b->n >= MAX_TRIG) return;
+    for (i = b->n; i && b->t[i - 1u].at > t->at; i--) b->t[i] = b->t[i - 1u];
+    b->t[i] = *t;
+    b->n++;
+}
+
+static void seq_where(uint32_t *bar, uint32_t *at)   /* where the music is now: the bar, and how far through it (/65536) */
+{
+    uint32_t pos, frames;
+    fm1_irq_off();
+    *bar = seq_bar; pos = seq_pos; frames = bars[seq_cur].frames;
+    fm1_irq_on();
+    *at = frames >= 256u ? (pos << 8) / (frames >> 8) : 0u;
+    if (*at > 65535u) *at = 65535u;
+}
+
+static uint32_t rec_begin(uint32_t role, uint32_t note, uint32_t vel)   /* -> the note's number (+1), 0: not kept */
+{
+    pnote_t *q;
+    uint32_t bar, at;
+    if (!rec_on || !seq_on || phrase.n >= PHRASE_MAX) return 0;
+    seq_where(&bar, &at);
+    q = &phrase.note[phrase.n];
+    q->bar = (uint8_t)bar; q->at = (uint16_t)at; q->len = 0; q->vel = (uint8_t)vel;
+    if (role == MEL_PULSE) { q->step = (uint8_t)note; q->role = MEL_PULSE; q->len = 4; phrase_new = 1; }
+    else {
+        int32_t st = mel_step_near(&plan, (int32_t)note);
+        if (mel_step_midi(&plan, st) > (int32_t)note) st--;
+        q->step = (uint8_t)(st < 0 ? 0 : st);
+        q->role = (uint8_t)(role | (uint32_t)((int32_t)note - mel_step_midi(&plan, st)) << 4);
+    }
+    phrase_dirty = 1;
+    return ++phrase.n;
+}
+static void rec_end(uint32_t idx)
+{
+    pnote_t *q;
+    uint32_t bar, at;
+    int32_t len;
+    if (!idx || idx > phrase.n) return;
+    q = &phrase.note[idx - 1u];
+    seq_where(&bar, &at);
+    len = (((int32_t)bar - (int32_t)q->bar) * 256) + (((int32_t)at - (int32_t)q->at) / 256);
+    if (len <= 0) len += (int32_t)plan.bars * 256;
+    q->len = (uint16_t)(len < 4 ? 4 : len > 65535 ? 65535 : len);
+    phrase_new = 1;
+}
+static void phrase_clear(void)
+{
+    uint32_t k;
+    phrase.n = 0;
+    for (k = 0; k < 27u; k++) held_rec[k][0] = held_rec[k][1] = held_rec[k][2] = 0;
+    phrase_dirty = phrase_new = 1;
+}
+
 static void fill_bar(barbuf_t *b, uint32_t bar)   /* one bar of the whole band, as the interrupt wants it */
 {
     mel_ev_t ev[MEL_MAX_EV];
-    uint32_t r, j, i, ticks = mel_bar_ticks(&plan);
+    uint32_t r, j, ticks = mel_bar_ticks(&plan);
     uint32_t leaf = (FS * 60u / plan.tempo) >> plan.eighths;
     b->n = 0;
     b->bar = bar % plan.bars;
@@ -144,10 +212,20 @@ static void fill_bar(barbuf_t *b, uint32_t bar)   /* one bar of the whole band, 
             t.len = (uint32_t)ev[j].len * b->frames / rt;
             t.role = (uint8_t)r; t.n = ev[j].n; t.vel = ev[j].vel;
             t.note[0] = ev[j].note[0]; t.note[1] = ev[j].note[1]; t.note[2] = ev[j].note[2];
-            for (i = b->n; i && b->t[i - 1u].at > t.at; i--) b->t[i] = b->t[i - 1u];   /* in order of time */
-            b->t[i] = t;
-            b->n++;
+            push_trig(b, &t);
         }
+    }
+    for (j = 0; j < phrase.n; j++) {            /* and your phrase, where it falls in this bar */
+        const pnote_t *q = &phrase.note[j];
+        trig_t t;
+        if (!q->len || q->bar % plan.bars != b->bar) continue;
+        t.at = ((uint32_t)q->at * (b->frames >> 4)) >> 12;
+        t.len = (uint32_t)q->len * (b->frames >> 8);
+        t.role = q->role & 15u; t.n = 1; t.vel = q->vel;
+        t.note[0] = t.role == MEL_PULSE ? q->step : (uint8_t)(mel_step_midi(&plan, q->step) + (q->role >> 4));
+        t.note[1] = t.note[2] = 0;
+        if (t.role != MEL_PULSE && t.note[0] > 127u) continue;
+        push_trig(b, &t);
     }
 }
 
@@ -214,6 +292,7 @@ static void key_down(uint32_t k, uint32_t vel)
     if (role == MEL_PULSE) {                    /* the pulse seat: the keys are the three drums */
         static const uint8_t DRUM[3] = {MEL_THUMP, MEL_SNAP, MEL_TICK};
         pulse_ask = (uint32_t)DRUM[k % 3u] << 8 | vel;
+        (void)rec_begin(MEL_PULSE, DRUM[k % 3u], vel);
         return;
     }
     held_note[k][held_n[k]++] = (uint8_t)note;
@@ -225,6 +304,7 @@ static void key_down(uint32_t k, uint32_t vel)
     for (i = 0; i < held_n[k]; i++) {
         ask(1, role, held_note[k][i], vel);
         midi_send(0x90u | role, held_note[k][i], vel);
+        held_rec[k][i] = (uint16_t)rec_begin(role, held_note[k][i], vel);
     }
 }
 static void key_up(uint32_t k)
@@ -233,6 +313,8 @@ static void key_up(uint32_t k)
     for (i = 0; i < held_n[k]; i++) {
         ask(0, held_role[k], held_note[k][i], 0);
         midi_send(0x80u | held_role[k], held_note[k][i], 0);
+        rec_end(held_rec[k][i]);
+        held_rec[k][i] = 0;
     }
     held_n[k] = 0;
 }
@@ -343,6 +425,13 @@ static void draw_bars(uint32_t bar, uint32_t playing)   /* the shape across the 
             cv_rect(x, y + 1, w < 2 ? 2 : r == MEL_PULSE ? 2 : w - 1, 5, c);
         }
     }
+    for (j = 0; j < phrase.n; j++) {            /* your phrase: cream, over the lane of the part it is in */
+        const pnote_t *q = &phrase.note[j];
+        int32_t x = 8 + (int32_t)((uint32_t)q->at * 224u >> 16), w = (int32_t)((uint32_t)q->len * 224u >> 8);
+        if (!q->len || q->bar % plan.bars != bar) continue;
+        if (x + w > 232) w = 232 - x;
+        cv_rect(x, 31 + (int32_t)(q->role & 3u) * 8 + 2, w < 2 ? 2 : w, 3, M_INK);
+    }
     cv_blit(0, 138);
 }
 
@@ -440,6 +529,7 @@ static void app_main(void)
     }
     if (set.level < -6 || set.level > 6) set.level = 0;
     if (set.preset >= MEL_PRESETS) set.preset = 0;
+    if (blob_load(0, &phrase, sizeof phrase) || phrase.n > PHRASE_MAX) phrase.n = 0;
     out_gain = OUT_GAIN[set.level + 6];
     for (r = 0; r < MEL_ROLES; r++)
         if (!mel_valid(&set.held[r])) { set.held[r] = set.piece; if (set.piece.role[r] == MEL_HELD) set.piece.role[r] = MEL_ENGINE; }
@@ -506,7 +596,16 @@ static void app_main(void)
                 } else p->role[r] = p->role[r] == MEL_YOU ? MEL_OFF : MEL_ENGINE;
                 changed = 1;
             }
-        if (b & (1u << BTN_PLAY)) { if (seq_on) seq_halt(); else seq_start(); bar_drawn = ~0u; }
+        if (b & (1u << BTN_PLAY)) { if (seq_on) { seq_halt(); rec_on = 0; } else seq_start(); bar_drawn = ~0u; }
+        if (b & (1u << BTN_REC)) {
+            if (fm1_in.buttons >> BTN_HOME & 1u) { phrase_clear(); say("PHRASE CLEARED", 0, ""); }
+            else {
+                rec_on = !rec_on;
+                if (rec_on && !seq_on) seq_start();   /* REC from rest starts the band */
+                say(rec_on ? "RECORDING: PLAY" : "KEPT ", rec_on ? 0u : phrase.n, rec_on ? "" : "NOTES");
+            }
+            bar_drawn = ~0u;
+        }
         if (b & (1u << BTN_OCT_DOWN) && set.oct > -2) { set.oct--; dirty = 1; t_change = fm1_ms; }
         if (b & (1u << BTN_OCT_UP) && set.oct < 2) { set.oct++; dirty = 1; t_change = fm1_ms; }
 
@@ -515,7 +614,8 @@ static void app_main(void)
             dirty = 1; t_change = hot_ms = fm1_ms;
             words_drawn = bar_drawn = code_drawn = ~0u;
         }
-        seq_service(changed);
+        seq_service(changed || phrase_new);
+        if (phrase_new) { phrase_new = 0; bar_drawn = ~0u; }
 
         /* your keys */
         keys = fm1_in.notes;
@@ -553,6 +653,8 @@ static void app_main(void)
         fm1_led_key(BTN_OCT_DOWN, set.oct < 0);
         fm1_led_key(BTN_OCT_UP, set.oct > 0);
         fm1_led_key(BTN_EDIT, alt);
+        fm1_led_key(BTN_REC, rec_on);           /* lit: it is listening; glowing: there is a phrase */
+        fm1_led_key_glow(BTN_REC, !rec_on && phrase.n);
 
         /* the screen: only what changed */
         if (hot && fm1_ms - hot_ms > 1200u) { hot = 0; words_drawn = ~0u; }
@@ -565,9 +667,10 @@ static void app_main(void)
         (void)lit;
 
         /* keep it: two seconds after the last change, when nothing sounds (an erase stalls the sound) */
-        if (dirty && !seq_on && syn_quiet() && fm1_ms - t_change > 2000u) {
-            settings_save(&set, sizeof set);
-            dirty = 0;
+        if ((dirty || phrase_dirty) && !seq_on && syn_quiet() && fm1_ms - t_change > 2000u) {
+            if (dirty) settings_save(&set, sizeof set);
+            if (phrase_dirty) blob_save(0, &phrase, sizeof phrase);
+            dirty = phrase_dirty = 0;
         }
     }
 }
