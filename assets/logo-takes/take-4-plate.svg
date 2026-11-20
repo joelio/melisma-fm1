@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+<rect width="240" height="240" fill="#000"/>
+<rect x="7" y="7" width="226" height="226" rx="6" fill="none" stroke="#ece8dc" stroke-width="1.6" opacity="0.9"/><rect x="13" y="13" width="214" height="214" rx="2.5" fill="none" stroke="#ece8dc" stroke-width="0.8" opacity="0.38"/><circle cx="23" cy="23" r="2.6" fill="#ece8dc" opacity="0.45"/><circle cx="23" cy="217" r="2.6" fill="#ece8dc" opacity="0.45"/><circle cx="217" cy="23" r="2.6" fill="#ece8dc" opacity="0.45"/><circle cx="217" cy="217" r="2.6" fill="#ece8dc" opacity="0.45"/><g transform="translate(50,2) scale(0.7)"><path d="M14.0,104 A86.0,86.0 0 0 1 186.0,104" fill="none" stroke="#f0aa32" stroke-width="11.3"/>
+<rect x="5.5" y="98" width="17" height="40" rx="7" fill="#f0aa32"/>
+<rect x="23.5" y="103" width="6" height="30" rx="3" fill="#ece8dc"/>
+<rect x="177.5" y="98" width="17" height="40" rx="7" fill="#f0aa32"/>
+<rect x="170.5" y="103" width="6" height="30" rx="3" fill="#ece8dc"/><path d="M31,84 A69,13 0 0 1 169,84 A69,23 0 0 1 31,84 Z" fill="#ece8dc" stroke="none" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M77,157 A23,5 0 0 1 123,157 A23,9 0 0 1 77,157 Z" fill="#ece8dc" stroke="none" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M100,34 C103.4,34 105.6,39 106.2,47 L107.4,70 C107.6,96 105,132 102.6,160 L101.6,171 L100,174 L98.4,171 L97.4,160 C95,132 92.4,96 92.6,70 L93.8,47 C94.4,39 96.6,34 100,34 Z" fill="#ece8dc" stroke="none" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M82,43 L118,43" stroke="#ece8dc" stroke-width="2.4000000000000004" stroke-linecap="round"/>
+<ellipse cx="100" cy="89" rx="3.3" ry="8" fill="none" stroke="#000" stroke-width="1.2800000000000002"/>
+<path d="M70,73 V66" stroke="#ece8dc" stroke-width="1.6" stroke-linecap="round"/>
+<path d="M130,73 V66" stroke="#ece8dc" stroke-width="1.6" stroke-linecap="round"/>
+<circle cx="58" cy="86" r="6.2" fill="none" stroke="#000" stroke-width="1.2800000000000002"/>
+<circle cx="58" cy="86" r="2.2" fill="#000"/>
+<circle cx="142" cy="86" r="6.2" fill="none" stroke="#000" stroke-width="1.2800000000000002"/>
+<circle cx="142" cy="86" r="2.2" fill="#000"/></g><text x="120" y="146" text-anchor="middle" fill="#ece8dc" opacity="1" font-family="Gill Sans, Helvetica Neue" font-weight="bold" font-size="17" letter-spacing="3">MERLIN ENGINES</text><path d="M30,156 H210" stroke="#ece8dc" stroke-width="0.8" opacity="0.4"/><text x="30" y="174" text-anchor="start" fill="#ece8dc" opacity="0.55" font-family="HelveticaNeue-CondensedBold, Helvetica Neue" font-weight="bold" font-size="10.5" letter-spacing="1.2">TYPE</text><text x="100" y="174" text-anchor="start" fill="#f0aa32" opacity="1" font-family="HelveticaNeue-CondensedBold, Helvetica Neue" font-weight="bold" font-size="10.5" letter-spacing="1.2">MELISMA</text><text x="30" y="190" text-anchor="start" fill="#ece8dc" opacity="0.55" font-family="HelveticaNeue-CondensedBold, Helvetica Neue" font-weight="bold" font-size="10.5" letter-spacing="1.2">MARK</text><text x="100" y="190" text-anchor="start" fill="#ece8dc" opacity="1" font-family="HelveticaNeue-CondensedBold, Helvetica Neue" font-weight="bold" font-size="10.5" letter-spacing="1.2">I</text><text x="30" y="206" text-anchor="start" fill="#ece8dc" opacity="0.55" font-family="HelveticaNeue-CondensedBold, Helvetica Neue" font-weight="bold" font-size="10.5" letter-spacing="1.2">AIRFRAME</text><text x="100" y="206" text-anchor="start" fill="#ece8dc" opacity="1" font-family="HelveticaNeue-CondensedBold, Helvetica Neue" font-weight="bold" font-size="10.5" letter-spacing="1.2">FM-1</text>
+</svg>

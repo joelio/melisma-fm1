@@ -8,7 +8,7 @@
     <circle cx="23" cy="23" r="2.6"/><circle cx="217" cy="23" r="2.6"/>
     <circle cx="23" cy="217" r="2.6"/><circle cx="217" cy="217" r="2.6"/>
   </g>
-  <g transform="translate(69,20) scale(1.52)" stroke="#f0aa32" fill="#f0aa32">
+  <g transform="translate(69,20) scale(1.52)" stroke="#a9cdb4" fill="#a9cdb4">
     <path d="M13.6 45 V22" stroke-width="2.4" stroke-linecap="round" fill="none"/>
     <path d="M19 26 Q38 16 58 24" stroke-width="2.4" stroke-linecap="round" fill="none"/>
     <ellipse cx="9.5" cy="45" rx="4.6" ry="3.4" transform="rotate(-20 9.5 45)"/>

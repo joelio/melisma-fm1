@@ -1,8 +1,8 @@
 # Melisma: the plate, then play; you take a few notes over the band; the dials turn; a seat is taken; stop
 # encoders: 0 SELECT, 1 ALGORITHM, 2..5 KNOB1..4, 6 PRESETS; buttons: 2 FX, 3 SEL, 4 ENV, 5 LFO, 6 EDIT, 12 PLAY
 800 shot
-1900 shot
-2000 btn 12
+2200 shot
+3500 btn 12
 3000 keys 1
 3400 keys 0
 3500 keys 4

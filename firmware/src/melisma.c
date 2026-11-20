@@ -345,7 +345,7 @@ static void app_idle(void)
 #define M_INK RGB(236, 232, 220)                /* cream, as a dial face */
 #define M_DIM RGB(120, 118, 110)
 #define M_RULE RGB(70, 68, 62)
-#define M_ACC RGB(240, 170, 50)                 /* amber: the one accent */
+#define M_ACC RGB(169, 205, 180)                /* Sky, the colour under a Spitfire: the one accent */
 static const uint16_t M_ROLE[MEL_ROLES] = {RGB(170, 120, 220), RGB(90, 160, 220), RGB(235, 165, 60), RGB(110, 190, 120)};
 
 static char *put(char *p, const char *s) { while (*s) *p++ = *s++; *p = 0; return p; }
@@ -493,15 +493,17 @@ static void draw_code(uint32_t alt)
     cv_blit(0, 222);
 }
 
-static void splash(void)                        /* the maker's plate, while the instrument wakes */
+static void splash(void)                        /* the maker's mark, then the instrument's plate, while it wakes */
 {
-    uint32_t y, t0;
-    for (y = 0; y < 240u; y += 60u) {
-        cv_begin(240, 60, C_BLACK);
-        mel_splash_rows(y, 60);
-        cv_blit(0, y);
+    uint32_t i, y, t0;
+    for (i = 0; i < MEL_SPLASHES; i++) {
+        for (y = 0; y < 240u; y += 60u) {
+            cv_begin(240, 60, C_BLACK);
+            mel_splash_rows(i, y, 60);
+            cv_blit(0, y);
+        }
+        for (t0 = fm1_ms; fm1_ms - t0 < 1500u; ) platform_poll();
     }
-    for (t0 = fm1_ms; fm1_ms - t0 < 1600u; ) platform_poll();
     lcd_fill(0, 0, 240, 240, C_BLACK);
 }
 
