@@ -14,6 +14,9 @@ Unofficial. Not affiliated with M-VAVE. Installing firmware is at your own risk:
 
 | | |
 |---|---|
+| [docs/PILOTS-NOTES.md](docs/PILOTS-NOTES.md) | The user guide: every control, as the firmware flies today |
+| [docs/PLAN.md](docs/PLAN.md) | What comes next: performance, styles, sound, sharing |
+| [docs/RESEARCH-NOTES.md](docs/RESEARCH-NOTES.md) | What other FM-1 firmwares and instruments do; style patterns; hardware capabilities |
 | [docs/DESIGN.md](docs/DESIGN.md) | What the instrument is and why; what is built so far (section 16) |
 | [docs/FLASHING-SAFETY.md](docs/FLASHING-SAFETY.md) | How FM-1s get bricked, how to recover, the install procedure |
 | `firmware/src/mel_engine.h` | The engine: word dials in, notes out. Pure, integer-only, no platform |
