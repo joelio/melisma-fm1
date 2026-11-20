@@ -36,7 +36,7 @@ static void random_piece(mel_piece_t *p)
     p->shape = (uint8_t)rnd(MEL_SHAPES); p->colour = (uint8_t)rnd(MEL_COLOURS); p->key = (uint8_t)rnd(MEL_KEYS);
     p->length = (uint8_t)rnd(MEL_LENGTHS); p->layout = (uint8_t)rnd(MEL_LAYOUTS); p->follow = (uint8_t)rnd(2);
     p->trim = (uint8_t)rnd(MEL_TRIMS); p->boost = (uint8_t)rnd(MEL_MAX_BOOST + 1u); p->variation = (uint16_t)rnd(MEL_VARIATIONS);
-    for (r = 0; r < MEL_ROLES; r++) { p->role[r] = (uint8_t)rnd(4); p->sound[r] = (uint8_t)rnd(MEL_SOUNDS); }
+    for (r = 0; r < MEL_ROLES; r++) { p->role[r] = (uint8_t)rnd(4); p->sound[r] = (uint8_t)rnd(MEL_SOUNDS); p->take[r] = (uint8_t)rnd(MEL_TAKES); }
 }
 
 /* ---- the code */
@@ -48,7 +48,7 @@ static void test_code(void)
     mel_default(&p);
     CHECK(mel_valid(&p), "the default piece is not valid");
     mel_code_make(&p, text);
-    CHECK(strlen(text) == 17 && text[5] == '-' && text[11] == '-', "code shape: %s", text);
+    CHECK(strlen(text) == 20 && text[6] == '-' && text[13] == '-', "code shape: %s", text);
     for (i = 0; i < 20000u; i++) {
         random_piece(&p);
         mel_code_make(&p, text);
@@ -59,7 +59,7 @@ static void test_code(void)
     for (i = 0; i < 300u; i++) {                /* one wrong character: always caught */
         random_piece(&p);
         mel_code_make(&p, text);
-        for (j = 0; j < 17u; j++) {
+        for (j = 0; j < 20u; j++) {
             if (text[j] == '-') continue;
             for (c = 0; c < 32u; c++) {
                 if (MEL_ALPHABET[c] == text[j]) continue;
@@ -74,7 +74,7 @@ static void test_code(void)
     for (i = 0, caught = tried = 0; i < 3000u; i++) {   /* two neighbours swapped: nearly always */
         random_piece(&p);
         mel_code_make(&p, text);
-        for (j = 0; j + 1u < 17u; j++) {
+        for (j = 0; j + 1u < 20u; j++) {
             uint32_t b = text[j + 1u] == '-' ? j + 2u : j + 1u;
             if (text[j] == '-' || text[j] == text[b]) continue;
             memcpy(bad, text, sizeof bad);
@@ -89,15 +89,17 @@ static void test_code(void)
     for (j = 0; text[j]; j++) bad[j] = (char)(text[j] >= 'A' && text[j] <= 'Z' ? text[j] + 32 : text[j] == '-' ? ' ' : text[j]);
     bad[j] = 0;
     CHECK(mel_code_read(bad, &q) == MEL_CODE_OK && !memcmp(&p, &q, sizeof p), "small letters and spaces should read");
-    CHECK(mel_code_read("K7QM2-XVD9F-4TRW", &q) == MEL_CODE_BAD_CHAR, "a short code");
-    CHECK(mel_code_read("K7QM2-XVD9F-4TR01", &q) == MEL_CODE_BAD_CHAR, "0 and 1 are not in the alphabet");
+    CHECK(mel_code_read("K7QM2X-VD9F4T-RW8AB", &q) == MEL_CODE_BAD_CHAR, "a short code");
+    CHECK(mel_code_read("K7QM2X-VD9F4T-RW8A01", &q) == MEL_CODE_BAD_CHAR, "0 and 1 are not in the alphabet");
 }
 
 /* ---- every piece: no wrong notes, in its register, in its bar, in order */
 static uint32_t strikes, crowded, distinct;     /* over everything: how often 3+ roles strike together */
-static void check_piece(const mel_piece_t *p)
+static void check_piece_fill(const mel_piece_t *p, uint32_t fill);
+static void check_piece(const mel_piece_t *p) { check_piece_fill(p, 0); }
+static void check_piece_fill(const mel_piece_t *p, uint32_t fill)
 {
-    static const uint8_t ROLE_LO[3] = {33, 52, 60}, ROLE_HI[3] = {44, 63, 87};
+    static const uint8_t ROLE_LO[3] = {33, 52, 60}, ROLE_HI[3] = {56, 75, 87};
     mel_plan_t pl;
     mel_ev_t ev[MEL_ROLES][MEL_MAX_EV], again[MEL_MAX_EV];
     uint32_t n[MEL_ROLES], bar, r, j, total;
@@ -115,19 +117,22 @@ static void check_piece(const mel_piece_t *p)
         CHECK(t <= 100u, "%s: tension %u", d, t);
         if (bar == 0u) CHECK(deg == 1u, "%s: does not open at home", d);
         for (r = 0; r < MEL_ROLES; r++) {
-            n[r] = mel_bar(p, &pl, r, bar, ev[r]);
+            n[r] = mel_bar(p, &pl, r, bar, fill, ev[r]);
             CHECK(n[r] >= 1u && n[r] <= MEL_MAX_EV, "%s: %s bar %u has %u notes", d, MEL_ROLE_NAME[r], bar, n[r]);
-            CHECK(mel_bar(p, &pl, r, bar, again) == n[r] && !memcmp(ev[r], again, n[r] * sizeof again[0]),
+            CHECK(mel_bar(p, &pl, r, bar, fill, again) == n[r] && !memcmp(ev[r], again, n[r] * sizeof again[0]),
                   "%s: %s bar %u is not the same twice", d, MEL_ROLE_NAME[r], bar);
             for (j = 0; j < n[r]; j++) {
                 const mel_ev_t *e = &ev[r][j];
-                uint32_t i;
+                uint32_t i, m = p->take[MEL_CHORDS], rung = r == MEL_CHORDS && (m == MEL_BROKEN || m == MEL_ROLLED);   /* (their notes ring on together) */
                 CHECK(e->at < total, "%s: %s bar %u note %u starts at %u of %u", d, MEL_ROLE_NAME[r], bar, j, e->at, total);
                 CHECK(e->len >= 1u && e->at + e->len <= total, "%s: %s bar %u note %u runs past the bar", d, MEL_ROLE_NAME[r], bar, j);
                 CHECK(!j || e->at > ev[r][j - 1u].at, "%s: %s bar %u notes out of order", d, MEL_ROLE_NAME[r], bar);
-                CHECK(!j || ev[r][j - 1u].at + ev[r][j - 1u].len <= e->at, "%s: %s bar %u note %u overlaps the next", d, MEL_ROLE_NAME[r], bar, j - 1u);
+                CHECK(!j || rung || ev[r][j - 1u].at + ev[r][j - 1u].len <= e->at, "%s: %s bar %u note %u overlaps the next", d, MEL_ROLE_NAME[r], bar, j - 1u);
                 CHECK(e->vel >= 20u && e->vel <= 127u, "%s: velocity %u", d, e->vel);
-                CHECK(e->n == (r == MEL_CHORDS ? 3u : 1u), "%s: %s plays %u notes at once", d, MEL_ROLE_NAME[r], e->n);
+                if (r != MEL_CHORDS) CHECK(e->n == 1u, "%s: %s plays %u notes at once", d, MEL_ROLE_NAME[r], e->n);
+                else if (m == MEL_BLOCK || m == MEL_OPEN || m == MEL_OFFBEAT) CHECK(e->n == 3u, "%s: a %s chord of %u notes", d, MEL_MANNER_NAME[m], e->n);
+                else if (m <= MEL_WAVE) CHECK(e->n == 1u, "%s: %s plays %u notes at once", d, MEL_MANNER_NAME[m], e->n);
+                else CHECK(e->n >= 1u && e->n <= 3u, "%s: %s plays %u notes at once", d, MEL_MANNER_NAME[m], e->n);
                 if (r == MEL_PULSE) {
                     CHECK(e->note[0] == MEL_THUMP || e->note[0] == MEL_SNAP || e->note[0] == MEL_TICK, "%s: pulse note %u", d, e->note[0]);
                 } else
@@ -139,11 +144,18 @@ static void check_piece(const mel_piece_t *p)
             }
         }
         if (n[MEL_BASS]) CHECK(ev[MEL_BASS][0].at == 0u, "%s: bar %u: the bass is not on the downbeat", d, bar);
-        if (bar == 0u || p->shape != MEL_LOOP) {   /* a bar's first bass note is its chord's root */
+        if ((bar == 0u || p->shape != MEL_LOOP) && p->take[MEL_BASS] != MEL_PEDAL) {   /* a bar's first bass note is its chord's root */
             int32_t rootpc = mel_step_midi(&pl, (int32_t)deg - 1) % 12;
             CHECK(ev[MEL_BASS][0].note[0] % 12 == rootpc, "%s: bar %u: the bass opens on %u, the chord's root is %d", d, bar, ev[MEL_BASS][0].note[0], rootpc);
         }
-        for (j = 0; j < total; j++) {
+        if (fill) {                             /* a fill: the drums roll to the bar line, the harmony leaves the second half alone */
+            uint32_t from = fill >= 2u ? 0u : total - (pl.leaves / 2u ? pl.leaves / 2u : 1u) * MEL_LEAF_TICKS;
+            CHECK(ev[MEL_PULSE][n[MEL_PULSE] - 1u].note[0] == MEL_SNAP && ev[MEL_PULSE][n[MEL_PULSE] - 1u].at + MEL_LEAF_TICKS > total,
+                  "%s: bar %u: the fill does not end on a snap at the bar line", d, bar);
+            for (j = 0; j < n[MEL_CHORDS]; j++)
+                CHECK(ev[MEL_CHORDS][j].at + ev[MEL_CHORDS][j].len <= (from ? from : total), "%s: bar %u: the chords play through the fill", d, bar);
+        }
+        for (j = 0; j < total && !fill; j++) {
             uint32_t c = (at[j] & 1u) + (at[j] >> 1 & 1u) + (at[j] >> 2 & 1u) + (at[j] >> 3 & 1u);
             strikes += c;
             if (c) distinct++;
@@ -170,10 +182,24 @@ static void test_space(void)
     printf("space    %u pieces at the default length: %u strikes, %u.%02u%% where 3+ roles land together, %u.%02u distinct attacks a strike\n",
            n, strikes, crowded * 100u / strikes, crowded * 10000u / strikes % 100u, distinct / strikes, distinct * 100u / strikes % 100u);
     CHECK(crowded * 100u < strikes * 35u, "too many strikes land together: the parts are a wall");
-    for (i = 0; i < 4000u; i++) {               /* and anywhere else in the space: colours, keys, lengths, the dial */
+    for (i = 0; i < 4000u; i++) {               /* and anywhere else in the space: colours, keys, lengths, the dial, takes */
         random_piece(&p);
         all_engine(&p);
         check_piece(&p);
+        if (i < 1500u) check_piece_fill(&p, 1u + i % 2u);   /* and with every bar a fill */
+    }
+    for (i = 0; i < 500u; i++) {                /* the last bar: everyone on the home chord, on the beat */
+        mel_plan_t pl;
+        mel_ev_t ev[MEL_MAX_EV];
+        uint32_t r, k;
+        random_piece(&p);
+        mel_plan(&p, &pl);
+        for (r = 0; r < MEL_ROLES; r++) {
+            CHECK(mel_ending(&p, &pl, r, ev) == 1u && ev[0].at == 0u, "an ending is one note on the beat");
+            for (k = 0; r != MEL_PULSE && k < ev[0].n; k++)
+                CHECK(mel_in_scale(&pl, ev[0].note[k]), "the ending's %s plays %u, not in the scale", MEL_ROLE_NAME[r], ev[0].note[k]);
+        }
+        CHECK(mel_ending(&p, &pl, MEL_BASS, ev) && ev[0].note[0] % 12u == pl.tonic, "the ending's bass is not the home note");
     }
 }
 
@@ -196,7 +222,7 @@ static void test_shape(void)
             CHECK(t >= prev, "rise: tension falls at bar %u", bar);
             prev = t;
             for (r = 0; r < MEL_ROLES; r++) {
-                uint32_t n = mel_bar(&p, &pl, r, bar, ev), h = bar >= pl.bars / 2u;
+                uint32_t n = mel_bar(&p, &pl, r, bar, 0, ev), h = bar >= pl.bars / 2u;
                 for (j = 0; j < n; j++) { vel[h] += ev[j].vel; cnt[h]++; }
             }
         }
@@ -229,7 +255,7 @@ static void test_dials(void)
             mel_plan(&p, &pl);
             tempo += pl.tempo;
             for (bar = 0; bar < pl.bars; bar++)
-                for (r = 0; r < MEL_ROLES; r++) n += mel_bar(&p, &pl, r, bar, ev);
+                for (r = 0; r < MEL_ROLES; r++) n += mel_bar(&p, &pl, r, bar, 0, ev);
         }
         CHECK(n > prev_n && tempo > prev_t, "%s is not busier and faster than %s", MEL_ENERGY_NAME[e], e ? MEL_ENERGY_NAME[e - 1u] : "nothing");
         prev_n = n; prev_t = tempo;
@@ -254,11 +280,46 @@ static void test_dials(void)
         q.mood = 3;
         mel_plan(&p, &pa); mel_plan(&q, &pb);
         for (bar = 0; bar < pa.bars; bar++) {
-            na = mel_bar(&p, &pa, MEL_MELODY, bar, a); nb = mel_bar(&q, &pb, MEL_MELODY, bar, b);
+            na = mel_bar(&p, &pa, MEL_MELODY, bar, 0, a); nb = mel_bar(&q, &pb, MEL_MELODY, bar, 0, b);
             if (na != nb) same = 0;
             for (j = 0; j < na && j < nb; j++) if (a[j].at != b[j].at) same = 0;
         }
         CHECK(same, "changing the mood moved the tune's rhythm");
+    }
+}
+
+/* ---- a take: another idea for one part, the rest as they were */
+static void test_takes(void)
+{
+    mel_piece_t p, q;
+    mel_plan_t pa, pb;
+    mel_ev_t a[MEL_MAX_EV], b[MEL_MAX_EV];
+    uint32_t v, r, o, bar, na, nb, tk;
+    for (v = 0; v < 60u; v++) {
+        mel_default(&p);
+        all_engine(&p);
+        p.variation = (uint16_t)(v * 17u); p.energy = (uint8_t)(1u + v % 4u); p.mood = (uint8_t)(v % MEL_MOODS);
+        r = v % MEL_ROLES;
+        uint32_t distinct = 0;
+        for (tk = 1; tk < MEL_TAKES; tk++) {
+            uint32_t differs = 0;
+            q = p;
+            q.take[r] = (uint8_t)tk;
+            mel_plan(&p, &pa); mel_plan(&q, &pb);
+            CHECK(!memcmp(&pa, &pb, sizeof pa), "a take changed the plan (key, tempo or chords)");
+            for (bar = 0; bar < pa.bars; bar++) {
+                CHECK(mel_degree(&p, &pa, bar) == mel_degree(&q, &pb, bar), "a take changed the harmony");
+                for (o = 0; o < MEL_ROLES; o++) {
+                    na = mel_bar(&p, &pa, o, bar, 0, a); nb = mel_bar(&q, &pb, o, bar, 0, b);
+                    if (o == r) differs |= na != nb || memcmp(a, b, na * sizeof a[0]);
+                    else CHECK(na == nb && !memcmp(a, b, na * sizeof a[0]), "a take of the %s changed the %s", MEL_ROLE_NAME[r], MEL_ROLE_NAME[o]);
+                }
+            }
+            distinct += differs;
+            if (r == MEL_CHORDS || r == MEL_MELODY || (r == MEL_BASS && tk != MEL_ROOTS && tk != MEL_PEDAL))
+                CHECK(differs, "take %u of the %s is the same as take 0 (variation %u)", tk, MEL_ROLE_NAME[r], p.variation);
+        }
+        CHECK(distinct >= 4u, "only %u of the %s's seven other takes differ from the first (variation %u)", distinct, MEL_ROLE_NAME[r], p.variation);
     }
 }
 
@@ -303,7 +364,7 @@ static void dump(const mel_piece_t *p)
     for (bar = 0; bar < pl.bars; bar++) {
         printf("bar %2u  tension %3u  degree %u  bright %u\n", bar + 1u, mel_tension(p, &pl, bar), mel_degree(p, &pl, bar), mel_brightness(p, &pl, bar));
         for (r = 0; r < MEL_ROLES; r++) {
-            n = mel_bar(p, &pl, r, bar, ev);
+            n = mel_bar(p, &pl, r, bar, 0, ev);
             printf("  %-6s", MEL_ROLE_NAME[r]);
             for (j = 0; j < n; j++) {
                 printf(" %u+%u:", ev[j].at, ev[j].len);
@@ -332,6 +393,7 @@ int main(int argc, char **argv)
     test_space();
     test_shape();
     test_dials();
+    test_takes();
     test_keys();
     {                                           /* the shipped pieces: each valid, each its own, each sound */
         uint32_t i, j;

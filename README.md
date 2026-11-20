@@ -5,7 +5,7 @@
 Custom firmware that turns the FM-1 pocket synth into a four-piece band you sit in with. You choose how the
 music should feel with dials labelled in plain words; the engine writes and plays bass, chords, melody and
 pulse; you take any seat and play along on the keys. Nothing is random: the same settings always give the
-same music, and a piece travels as a 15-character code.
+same music, and a piece travels as an 18-character code.
 
 Unofficial. Not affiliated with M-VAVE. Installing firmware is at your own risk: read
 [docs/FLASHING-SAFETY.md](docs/FLASHING-SAFETY.md) first.

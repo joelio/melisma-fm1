@@ -352,7 +352,7 @@ or a constant:
 | Question | Default chosen | Why |
 |---|---|---|
 | Default seat | You on melody; engine on bass, chords and pulse. | Pressing a key does something musical straight away. |
-| Sound choice in the code | Included, so the code is 15 characters. | A shared jam should sound like the one that was shared. |
+| Sound choice in the code | Included. With the style and each part's way of playing added (stage 1 of docs/PLAN.md), the code is now 18 characters: 84 bits and a check. | A shared jam should sound like the one that was shared. |
 | History depth | 64 pieces. | Costs under 600 bytes. |
 | MIDI clock | Follow it when present. | Lets the FM-1 sit in with other gear. |
 | Button assignments | Settled once the unit is in hand. | Depends on how the panel feels to play. |
@@ -392,3 +392,20 @@ Measured but not judged: nobody has listened to it yet. Levels, timing and
 note correctness are checked by tests; whether it sounds good is not.
 At `frantic` more than half the strikes land with two other parts, which is
 dense by the vocabulary's own definition and wants tuning by ear.
+
+### Added 20 November 2026: performance (stage 1 of docs/PLAN.md)
+
+Built, and described for the player in docs/PILOTS-NOTES.md:
+- Parts drop out and come back on the bar line with one tap; holding takes the seat; EDIT + a part solos it.
+- Fills (ARP), written by the engine: the playing bar is made again and taken up mid-bar by the interrupt.
+- Sections (INTRO, A, B, BREAK, ENDING), scenes (eight, kept with the settings), BACK and ROLL, on the panel:
+  SEQ turns the keys into choices.
+- Each part has eight ways of playing: the chords' manners (block, open, three arpeggios, broken, rolled, offbeat),
+  the bass's (written, roots, fifths, octaves, walk, triad, pedal, push), and numbered ideas for melody and pulse.
+  They are in the piece and its code, which grew to 18 characters. Pieces made before are unchanged note for note.
+- REC: undo of the last pass, and snapping to the beat.
+- SAVE: keeps everything on demand, while playing if asked; held, it shows the code large. Its light glows when
+  something is unsaved.
+- A load meter (EDIT held, bottom right): the longest audio block of the last two seconds, as a percentage.
+
+Not built from stage 1: recording a whole performance as a take; the hidden engineering page.

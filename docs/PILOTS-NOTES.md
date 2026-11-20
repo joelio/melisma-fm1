@@ -20,15 +20,19 @@ yourself on the keys. Nothing is random: the same settings always give the same 
 | KNOB3 | Feel: straight, swung, waltz, lilting, odd | Tempo, within the energy's range (AUTO lets the engine choose) |
 | KNOB4 | Shape: loop, rise, fall, arch, question and answer | Length: 4 to 32 bars |
 | SELECT | Key (turn below C for AUTO) | Key layout: degrees, snapped, chromatic |
-| ALGORITHM | Variation: another piece from the same words (0 to 1023) | Who follows whom (stored, not yet acted on) |
+| ALGORITHM | Variation: another piece from the same words (0 to 1023) | |
 | PRESETS | The shipped pieces, 24 of them | Output level, −6 to +6 |
 | MASTER | Volume | |
-| FX, SCL, ENV, LFO | The four seats: bass, chords, melody, pulse | |
-| GLO + a seat button | That part's next sound (five each for bass, chords, melody) | |
-| HOME + a seat button | Hold that part exactly as it is while you change everything else | |
+| FX, SCL, ENV, LFO | The four parts: bass, chords, melody, pulse. **Tap:** the part drops out, or comes back, at the next bar. **Hold half a second:** the seat is yours | That part alone, for as long as you hold it |
+| GLO + a part's button | That part's next sound (five each for bass, chords, melody) | |
+| HOME + a part's button | Hold that part exactly as it is while you change everything else | |
+| SEQ + a part's button | That part's next way of playing (see section 9) | |
+| ARP | A fill to the end of this bar. Held: a build, for as long as you hold it | |
+| SEQ | Held, or tapped to stay: the keys become the panel (section 9) | |
 | PLAY | Start and stop | |
-| REC | Keep what you play as a looping phrase | |
-| HOME + REC | Clear the phrase | |
+| REC | Keep what you play as a looping phrase | Snap what you record to the beat, or keep your own timing |
+| HOME + REC | Undo the last recording pass. Held for a second: clear the whole phrase | |
+| SAVE | Keep everything now. Held: the piece's code, large | |
 | OCT−, OCT+ | Your octave | |
 
 A dial turned while the band is playing takes effect at the next bar line, so the music never stumbles.
@@ -59,8 +63,11 @@ Each seat button's light tells you who is playing that part:
 | Glowing dimly | Held: frozen as it was |
 | Dark | Off |
 
-Press a seat button to take that seat. Press it again to switch the part off, and again to hand it back to the
-engine. You can only sit in one seat at a time. With no seat taken, the keys play over the engine's melody.
+**Tap** a part's button and it drops out at the next bar; tap again and it comes back. **Hold** the button for
+half a second and that seat is yours: the engine stops playing it and the keys do. Tap it to hand it back. You
+can only sit in one seat at a time. With no seat taken, the keys play over the engine's melody.
+
+Hold **EDIT** and a part's button to hear that part alone for as long as you hold it.
 
 - **Melody seat:** single notes.
 - **Bass seat:** the same keys, two octaves down.
@@ -86,27 +93,71 @@ Hold **GLO** and press a seat button to step to that part's next sound. The scre
 ## 8. Recording a phrase
 
 Press **REC** (it starts the band if it was stopped) and play. Press **REC** again and what you played loops
-with the piece. Press REC and play again to add to it. **HOME + REC** clears it.
+with the piece. Press REC and play again to add to it.
+
+- **HOME + REC** undoes the last pass. Hold the two for a second to clear the whole phrase.
+- **EDIT + REC** switches snapping. With it on (the default), what you record is moved to the nearest beat or
+  half-beat of the piece's feel, so a loose take comes back tight. With it off, your timing is kept as played.
 
 The phrase is kept as steps of the scale, not as fixed pitches. Turn the mood or the key afterwards and the
 phrase moves with the band, still with no wrong notes. The REC light glows when a phrase exists.
 
-## 9. Shipped pieces
+## 9. Performing: fills, sections, scenes and the panel
 
-Turn **PRESETS**. The name shows at the bottom of the screen. A preset is only the dials in a position, so
-anything you do after loading one is yours. Several leave the melody seat open for you.
+**A fill.** Tap **ARP** and the band plays a fill to the end of the bar: the drums roll, the bass walks into the
+next chord, the chords leave room. Hold ARP and the band builds for as long as you hold it.
 
-## 10. The screen
+**The panel.** Hold **SEQ** and the keys stop playing notes and become a panel of choices. Tap SEQ instead and
+the panel stays up until you tap it again (its light shows). The key lights show what can be pressed, and what
+is chosen is lit brightly. The top of the screen shows the section and how each part is playing.
 
-From the top: the four words (the one you last turned is highlighted). The shape of the piece as a line, with
-the bar being played marked. Four lanes showing where each part strikes in this bar; a dashed lane is your seat.
-Then the key, tempo, variation and bar count, and at the bottom the piece's 15-character code.
+Black keys, left to right:
+
+| Keys | What they choose |
+|---|---|
+| The first five | The section: **INTRO** (chords and pulse only), **A** (the piece as dialled), **B** (more of everything, further from home), **BREAK** (chords and melody only), **ENDING** (one last bar on the home chord, and the band stops) |
+| The next four | A new way of playing for the bass, the chords, the melody, the pulse |
+| The next one | **BACK**: the piece as it was before your last choice here. Press again to go forward |
+| The last one | **ROLL**: another variation of the same words. Its number is shown, so you can return to it |
+
+A section starts at the next bar, and the band plays a fill to get there.
+
+White keys, left to right:
+
+| Keys | What they choose |
+|---|---|
+| The first eight | **Scenes.** Hold **HOME** and press one to keep the whole piece there. Press it alone to bring that piece back at the next bar |
+| The last eight | How the chords are played: **BLOCK**, **OPEN**, **CLIMB**, **FALL**, **WAVE**, **BROKEN**, **ROLLED**, **OFFBEAT** |
+
+CLIMB, FALL and WAVE are arpeggios: one note of the chord at a time, upwards, downwards, or up and back.
+
+The bass has eight ways too: WRITTEN, ROOTS, FIFTHS, OCTAVES, WALK, TRIAD, PEDAL (the home note under
+everything) and PUSH (it arrives early). The melody and the pulse have eight ideas each, numbered.
+
+None of this is lost: every choice is part of the piece, kept in its code and in a scene.
+
+## 10. Shipped pieces, the screen, and the code
+
+Turn **PRESETS** to step through the shipped pieces. The name shows at the bottom of the screen. A preset is
+only the dials in a position, so anything you do after loading one is yours. Several leave the melody seat open
+for you.
+
+The screen, from the top: the four words (the one you last turned is highlighted). The shape of the piece as a
+line, with the bar being played marked. Four lanes showing where each part strikes in this bar; a dashed lane is
+your seat. Then the key, tempo, variation and bar count, and at the bottom the piece's code.
+
+**Hold SAVE** to see the code filling the whole screen, in three groups of six, for reading out or photographing.
 
 ## 11. What is kept
 
-Your piece, octave, level and phrase are saved about two seconds after you **stop** the band. They are not saved
-while it plays, because writing to memory interrupts the sound. Stop before switching off if you want to keep
-a change.
+Your piece, scenes, octave, level and phrase are kept in two ways:
+
+- **Tap SAVE** and everything is kept at once, even while the band plays. The sound stutters for a fraction of a
+  second while it writes.
+- Left alone, it is all kept about two seconds after you **stop** the band.
+
+The **SAVE light glows** whenever something has not been kept yet. If it is glowing, tap SAVE (or stop the band
+and wait a moment) before you switch off.
 
 ## 12. Too quiet?
 
@@ -128,6 +179,7 @@ Full detail, with sources: [FLASHING-SAFETY.md](FLASHING-SAFETY.md).
 ## 14. Known limits of the Mark I
 
 - The share code is shown but cannot yet be typed in.
+- One rhythmic style only: the style dial is the next stage of work.
 - No reverb or other effects; the sound is dry.
 - The keys do not yet sense how hard they are played.
 - MIDI clock is not followed.

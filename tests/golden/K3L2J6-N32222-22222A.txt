@@ -1,4 +1,4 @@
-K3L2J-6N322-2222F
+K3L2J6-N32222-22222A
 SAD STILL WALTZ FALL col 0 key 0 len 1 var 417 boost 0
 tempo 60, home F, 8 bars of 3 x 96 ticks, swing 0
 bar  1  tension 100  degree 1  bright 71
