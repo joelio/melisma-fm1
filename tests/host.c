@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
-/* A fake FM-1 (or SMK-37) on a computer: the app (firmware/src/dinghy.c) runs unchanged on it. platform.c includes
+/* A fake FM-1 (or SMK-37) on a computer: the app (firmware/src/melisma.c) runs unchanged on it. platform.c includes
  * this file instead of the hardware when DINGHY_HOST is set. A script presses keys over time; out come
  * the screen (PPM, at the times SHOT asks) and the sound (WAV, as the FM-1 sends it over USB).
  *
  *   mkdir -p build/host
- *   cc -O2 -Wall -DDINGHY_HOST -Ifirmware/hal -Ifirmware/src -Ifirmware/gen -o build/host/dinghy firmware/src/dinghy.c
+ *   cc -O2 -Wall -DDINGHY_HOST -Ifirmware/hal -Ifirmware/src -Ifirmware/gen -o build/host/dinghy firmware/src/melisma.c
  *   build/host/dinghy build/host/dinghy        (-> build/host/dinghy.wav, build/host/dinghy-<ms>.ppm)
  *   build/host/dinghy OUT script.txt [FPS]    (your own script; with FPS: OUT-NNNNN.ppm, a frame every 1/FPS s:
  *                                             a film of your firmware, e.g. ffmpeg -r 30 -i OUT-%05d.ppm ...)

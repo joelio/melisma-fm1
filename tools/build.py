@@ -55,13 +55,13 @@ SDK_SHA256 = {
 }
 
 BOARD = "fm1"                       # fm1 (default) or smk37: BOARD env or --board
-BOARD_PREFIX = {"fm1": "FM-1_99", "smk37": "SMK-37 Pro_99"}   # identity: prefix + minor (0: a dev build)
+BOARD_PREFIX = {"fm1": "FM-1_96", "smk37": "SMK-37 Pro_96"}   # identity: prefix + minor (0: a dev build)
 BOARD_DEFS = {"fm1": [], "smk37": ["-DBOARD_SMK37=1"]}
 MODELS = {"pro": "SMK-37 Pro", "elite": "SMK-37 Elite", "mke": "MKE-P37"}   # smk37: one keyboard, three names
-DATA_FAMILY = "DINGHY"              # the SMK store's owner tag (store.h): 1..7 of A-Z 0-9. Your fork: your own
-SCREEN_NAME = "DINGHY"              # the update loader's screen (FM-1, ldr_screen.c): the name and its colour (RGB565)
-SCREEN_COLOUR = 0xB47F              # lilac, #B48CFF
-PRODUCT = "FM-1_990"                # Dinghy: 99N (OUR_LOADER in the installer wants FM-1_9NN). Your fork: pick your own
+DATA_FAMILY = "MELISMA"              # the SMK store's owner tag (store.h): 1..7 of A-Z 0-9. Your fork: your own
+SCREEN_NAME = "MELISMA"              # the update loader's screen (FM-1, ldr_screen.c): the name and its colour (RGB565)
+SCREEN_COLOUR = 0xF546              # amber, #F0AA32
+PRODUCT = "FM-1_960"                # Melisma: 96N (Dinghy is 99N) (OUR_LOADER in the installer wants FM-1_9NN). Your fork: pick your own
 VERSION = None                      # APP_VER for release builds
 
 
@@ -176,7 +176,7 @@ def build_app():
     cmds = [("cc", "-c", FW / "crt0.S", "-o", OUT / "crt0.o"),
             ("cc", "-c", FW / "hal" / "fm1_vec.S", "-o", OUT / "fm1_vec.o"),
             ("cc", "-c", FW / "hal" / "fm1_isr.S", "-o", OUT / "fm1_isr.o"),
-            ("cc", *flags, "-c", FW / "src" / "dinghy.c", "-o", OUT / "dinghy.o")]
+            ("cc", *flags, "-c", FW / "src" / "melisma.c", "-o", OUT / "dinghy.o")]
     tc_all(*cmds)
     elf = OUT / "dinghy.elf"
     ld = FW / "app.ld"

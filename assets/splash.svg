@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <!-- Melisma's boot plate for the FM-1's 240 x 240 screen: the data plate of the Melisma project
+       (music-thingy/assets/logo-plate.svg), redrawn square, cream on black with the mark in amber. -->
+  <rect width="240" height="240" fill="#000"/>
+  <rect x="7" y="7" width="226" height="226" rx="6" fill="none" stroke="#ece8dc" stroke-width="1.6" opacity="0.9"/>
+  <rect x="13" y="13" width="214" height="214" rx="2.5" fill="none" stroke="#ece8dc" stroke-width="0.8" opacity="0.38"/>
+  <g fill="#ece8dc" opacity="0.45">
+    <circle cx="23" cy="23" r="2.6"/><circle cx="217" cy="23" r="2.6"/>
+    <circle cx="23" cy="217" r="2.6"/><circle cx="217" cy="217" r="2.6"/>
+  </g>
+  <g transform="translate(69,20) scale(1.52)" stroke="#f0aa32" fill="#f0aa32">
+    <path d="M13.6 45 V22" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+    <path d="M19 26 Q38 16 58 24" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+    <ellipse cx="9.5" cy="45" rx="4.6" ry="3.4" transform="rotate(-20 9.5 45)"/>
+    <ellipse cx="31" cy="37" rx="4.2" ry="3.1" transform="rotate(-20 31 37)"/>
+    <ellipse cx="45" cy="34" rx="4.2" ry="3.1" transform="rotate(-20 45 34)"/>
+    <ellipse cx="58" cy="33" rx="4.2" ry="3.1" transform="rotate(-20 58 33)"/>
+  </g>
+  <text x="122.5" y="124" text-anchor="middle" fill="#ece8dc"
+        font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="25" font-weight="600" letter-spacing="6.5">MELISMA</text>
+  <line x1="30" y1="138" x2="210" y2="138" stroke="#ece8dc" stroke-width="0.8" opacity="0.4"/>
+  <g font-family="HelveticaNeue-CondensedBold, Helvetica Neue, Arial Narrow, sans-serif" font-weight="bold" font-size="10.5" fill="#ece8dc" letter-spacing="1.2">
+    <text x="30" y="156" opacity="0.55">TYPE</text>
+    <text x="100" y="156">FOUR-PART BAND</text>
+    <text x="30" y="173" opacity="0.55">MARK</text>
+    <text x="100" y="173">I</text>
+    <text x="30" y="190" opacity="0.55">AIRFRAME</text>
+    <text x="100" y="190">FM-1</text>
+  </g>
+  <line x1="30" y1="199" x2="210" y2="199" stroke="#ece8dc" stroke-width="0.8" opacity="0.4"/>
+  <text x="120" y="217" text-anchor="middle" fill="#ece8dc"
+        font-family="HelveticaNeue-CondensedBlack, Helvetica Neue, Arial Narrow, sans-serif" font-weight="900" font-size="12.5" letter-spacing="3.6">MERLIN ENGINES</text>
+</svg>

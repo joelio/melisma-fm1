@@ -18,6 +18,11 @@ run() { echo "== $1"; shift; "$@" || fail=1; }
 
 [ -f build/dinghy.fwsc ] || { echo "run ./build.sh first"; exit 1; }
 
+$CC -Wextra -Wno-unused-const-variable -Ifirmware/src -o "$OUT/mel_test" tests/mel_test.c
+run "Melisma's engine: codes, no wrong notes over the dial space, shapes, dials, key layouts" "$OUT/mel_test"
+golden() { for g in tests/golden/*.txt; do "$OUT/mel_test" dump "$(basename "$g" .txt)" | cmp -s - "$g" || { echo "golden: $g differs"; return 1; }; done; echo "golden: $(ls tests/golden | wc -l | tr -d ' ') pieces, note for note"; }
+run "Melisma's engine: the reference pieces have not changed (tests/golden)" golden
+run "Melisma on the host: play, your keys, the dials, a seat, the second layer" sh tests/run_host.sh tests/scripts/melisma.txt
 run "FM-1 app on the host: the default script plays, screens and sound" sh tests/run_host.sh
 run "SMK-37 app on the host: the default script" env BOARD=smk37 sh tests/run_host.sh
 run "FM-1 MIDI: USB, the TRS jack, a clock, the channel" sh tests/run_host.sh tests/scripts/midi.txt
