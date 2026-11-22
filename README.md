@@ -16,6 +16,8 @@ Unofficial. Not affiliated with M-VAVE. Installing firmware is at your own risk:
 |---|---|
 | [docs/PILOTS-NOTES.md](docs/PILOTS-NOTES.md) | The user guide: every control, as the firmware flies today |
 | [docs/PLAN.md](docs/PLAN.md) | What comes next: performance, styles, sound, sharing |
+| [docs/SOUND-PLAN.md](docs/SOUND-PLAN.md) | The proposal for real instruments: five kinds of voice, 34 instruments, effects, how to choose them |
+| [docs/SOUND-RESEARCH.md](docs/SOUND-RESEARCH.md) | The research behind it: why the sound is thin, engines on this chip, instrument models in fixed point |
 | [docs/RESEARCH-NOTES.md](docs/RESEARCH-NOTES.md) | What other FM-1 firmwares and instruments do; style patterns; hardware capabilities |
 | [docs/DESIGN.md](docs/DESIGN.md) | What the instrument is and why; what is built so far (section 16) |
 | [docs/FLASHING-SAFETY.md](docs/FLASHING-SAFETY.md) | How FM-1s get bricked, how to recover, the install procedure |
