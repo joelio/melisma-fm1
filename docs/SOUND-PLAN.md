@@ -1,6 +1,6 @@
 # Sound plan: real instruments for the band
 
-Proposal for Joel to review, 22 November 2026. It replaces "Stage 3: Sound" in [PLAN.md](PLAN.md). The research
+Agreed with Joel on 22 November 2026, on condition that it is documented and in the tutorial. **Steps 1 and 2 are built** (the end of [DESIGN.md](DESIGN.md) says what they became). It replaces "Stage 3: Sound" in [PLAN.md](PLAN.md). The research
 behind it is in [SOUND-RESEARCH.md](SOUND-RESEARCH.md). Nothing here is built yet.
 
 ## The problem

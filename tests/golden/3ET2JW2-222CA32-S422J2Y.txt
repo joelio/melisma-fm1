@@ -1,4 +1,4 @@
-3ET2JW-222222-J7222W
+3ET2JW2-222CA32-S422J2Y
 BRIGHT DRIVING SWUNG ARCH col 0 key 0 len 1 var 7 boost 11
 tempo 140, home A, 8 bars of 4 x 96 ticks, swing 67
 bar  1  tension  50  degree 1  bright 79

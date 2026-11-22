@@ -1,7 +1,7 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-3.0-only
 # Melisma's checks, on this computer (no hosted CI: see README.md).
-#   tools/check.sh           the engine's tests, the golden pieces, a host run
+#   tools/check.sh           the engine's tests, the golden pieces, every instrument measured, a host run
 #   tools/check.sh --full    then the device build, the platform's tests, and the image booted in fm1-emu
 set -e
 cd "$(dirname "$0")/.."
@@ -13,12 +13,34 @@ for g in tests/golden/*.txt; do
     "$OUT/mel_test" dump "$(basename "$g" .txt)" | cmp -s - "$g" || { echo "golden: $g differs (the music changed: mean it, then regenerate)"; exit 1; }
 done
 echo "golden   $(ls tests/golden | wc -l | tr -d ' ') pieces, note for note"
+cc -O2 -Wall -Wextra -Wno-unused-function -Wno-unused-const-variable -Ifirmware/src -o "$OUT/synth_test" tests/synth_test.c -lm
+"$OUT/synth_test" >"$OUT/synth.log" || { grep -E 'FAIL|checks' "$OUT/synth.log"; exit 1; }
+echo "synth    $(grep -c -E ' (fm|analog) ' "$OUT/synth.log") instruments measured: $(tail -1 "$OUT/synth.log")"
 PY="${PYTHON:-python3}"; [ -x .venv/bin/python ] && PY="$PWD/.venv/bin/python"
 PATH="$(dirname "$PY"):$PATH" sh tests/run_host.sh tests/scripts/melisma.txt >"$OUT/host.log" 2>&1 || { tail -20 "$OUT/host.log"; exit 1; }
 echo "host     $(grep -c 'screen ->' "$OUT/host.log") screens, $(grep 'sound' "$OUT/host.log" | sed 's/.*(\(.*\))/\1/')"
 [ "$1" = "--full" ] || exit 0
 
 export JIELI_TOOLCHAIN="${JIELI_TOOLCHAIN:-$PWD/.jieli/toolchain}" AC79_SDK="${AC79_SDK:-$PWD/.sdk}" PYTHON="$PY"
+EMU="$(ls -d .tools/fm1-emu/*/fm1-live 2>/dev/null | head -1)"
+if [ -n "$EMU" ]; then                         # first the heaviest band there is (a test build), at an FM-1's own pace
+    DINGHY_DEFS=-DMEL_BENCH PATH="$(dirname "$PY"):$PATH" ./build.sh >"$OUT/bench-build.log" 2>&1 || { tail -5 "$OUT/bench-build.log"; exit 1; }
+    mkdir -p build/emu && cp build/dinghy.fwsc build/emu/bench.fwsc && cd build/emu
+    FM1_DUMPRAM=bench-ram.bin FM1_BENCH_KEYS='3500:PLAY,3600:PLAY^' FM1_BENCH_WAV=bench.raw \
+        "../../$EMU" --fwsc bench.fwsc --flash-chip uc25hq80 --bench 16000 >bench.log 2>&1 || { tail -5 bench.log; exit 1; }
+    "$PY" - <<'PYEOF'
+import struct, sys
+d = open('bench-ram.bin', 'rb').read()          # the test build leaves the interrupt's times between two marks
+i = d.find(b'LOAD')
+if i < 0 or d[i + 16:i + 20] != b'MARK': sys.exit("heaviest: the times were not found in the memory")
+worst, total, n = struct.unpack('<III', d[i + 4:i + 16])
+block = 256 * 1000000 // 44100 * 24             # a block of sound, in the timer's ticks
+mean, worst = 100 * total / max(n, 1) / block, 100 * worst / block
+print(f"heaviest band: the audio interrupt takes {mean:.0f}% of a block, {worst:.0f}% at worst (240 MHz; {n} blocks)")
+sys.exit(0 if n > 1500 and worst < 60 else 1)
+PYEOF
+    cd ../..
+fi
 PATH="$(dirname "$PY"):$PATH" ./build.sh | grep -E 'ok |package|error' 
 PATH="$(dirname "$PY"):$PATH" sh tests/run_tests.sh >"$OUT/tests.log" 2>&1 || { grep -E 'FAIL|differs|error' "$OUT/tests.log" | head; exit 1; }
 echo "platform $(tail -1 "$OUT/tests.log")"

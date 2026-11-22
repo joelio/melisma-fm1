@@ -1,4 +1,4 @@
-3ME2JF-E22222-22222F
+3ME2JFE-222CA32-2222J2D
 TENSE FRANTIC ODD RISE col 0 key 0 len 3 var 99 boost 0
 tempo 159, home Bb, 16 bars of 7 x 96 ticks, swing 0
 bar  1  tension   0  degree 1  bright 64

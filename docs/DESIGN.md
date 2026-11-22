@@ -424,3 +424,22 @@ Not built from stage 1: recording a whole performance as a take; the hidden engi
 
 Not built from stage 2: a major chord on the fifth for FIESTA in minor moods; the 12-bar form for the shuffle;
 the larger 808/909 kit (clap, toms, cowbell).
+
+### Added 22 November 2026: instruments and space (steps 1 and 2 of docs/SOUND-PLAN.md)
+
+- mel_synth.h rewritten. A voice is an instrument from one list (`SYN_INST`; its number is what a piece keeps, so
+  the list only grows at the end). Two kinds so far: FM (now with feedback and a slightly sharp modulator) and
+  analogue (two band-limited sawtooths or a pulse, a sub-octave, drive, a state-variable filter run twice a frame
+  with its own envelope). Flags give one-note-at-a-time with glide, unison, and a filter that follows loudness.
+- Every voice: vibrato after 0.3 s, a slow drift of a few cents, a place between the two sides.
+- A shared chorus (three wandering taps) and a room (four all-passes and two cross-fed loops, sized and damped
+  for five rooms; its arithmetic rounds towards zero so the tail dies to silence). The bass stays out of the room.
+- GLO held is the line-up page. The piece gained `room`, and instrument numbers of 6 bits: the code is 21
+  characters. Pieces kept by earlier builds are renumbered when loaded, not lost.
+- tests/synth_test.c measures every instrument (tuning, level, peaks, a clean ending, silence afterwards) and the
+  rooms, and can write a WAV of each. tools/check.sh --full now times the heaviest band in the emulator from a
+  test build: 33% of a block on average, 44% at worst, at 240 MHz.
+- The training flight has a step for the line-up, and says how to leave it on every screen.
+
+Still to come from the sound plan: plucked and struck instruments, organs and electric pianos, flute, reed and
+voice, the tempo delay, and the speaker-aware bass.

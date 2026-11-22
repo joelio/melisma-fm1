@@ -24,7 +24,8 @@ yourself on the keys. Nothing is random: the same settings always give the same 
 | PRESETS | The shipped pieces, 38 of them | Output level, −6 to +6 |
 | MASTER | Volume | |
 | FX, SCL, ENV, LFO | The four parts: bass, chords, melody, pulse. **Tap:** the part drops out, or comes back, at the next bar. **Hold half a second:** the seat is yours | That part alone, for as long as you hold it |
-| GLO + a part's button | That part's next sound (five each for bass, chords, melody) | |
+| GLO, held | The band's line-up: KNOB1, 2 and 3 choose the bass's, the chords' and the melody's instrument; KNOB4 chooses the room (section 7) | |
+| GLO + a part's button | That part's next instrument | |
 | HOME + a part's button | Hold that part exactly as it is while you change everything else | |
 | SEQ + a part's button | That part's next way of playing (see section 9) | |
 | ARP | A fill to the end of this bar. Held: a build, for as long as you hold it | |
@@ -33,7 +34,7 @@ yourself on the keys. Nothing is random: the same settings always give the same 
 | REC | Keep what you play as a looping phrase | Snap what you record to the beat, or keep your own timing |
 | HOME + REC | Undo the last recording pass. Held for a second: clear the whole phrase | |
 | SAVE | Keep everything now. Held: the piece's code, large | |
-| HOME + PLAY | The training flight: a built-in lesson, twelve steps. Again: leave it | |
+| HOME + PLAY | The training flight: a built-in lesson, thirteen steps. Again: leave it | |
 | OCT−, OCT+ | Your octave | |
 
 A dial turned while the band is playing takes effect at the next bar line, so the music never stumbles.
@@ -45,12 +46,12 @@ the piece. Press **PLAY**. That is all that is needed to make music.
 
 ### The training flight
 
-A new instrument starts with a short lesson built in: twelve steps, each naming one thing to do (press PLAY,
-turn a knob, tap a part, play a fill, open the panel, record, save). It waits until you have done it, answers
+A new instrument starts with a short lesson built in: thirteen steps, each naming one thing to do (press PLAY,
+turn a knob, tap a part, play a fill, open the panel, choose an instrument, record, save). It waits until you have done it, answers
 "ROGER", and moves on. The light of the control to use blinks. Everything works normally underneath, so you are
 playing the real instrument throughout.
 
-- **HOME + PLAY** starts the flight at any time, or leaves it.
+- **HOME + PLAY** starts the flight at any time, or leaves it at once. The screen says so throughout.
 - **HOME**, tapped on its own, passes over a step.
 
 ## 4. The words
@@ -129,9 +130,45 @@ Three layouts (EDIT + SELECT), which you can change while playing:
 | Snapped | A normal piano. A key outside the scale plays the nearest note that fits |
 | Chromatic | A normal piano with no help |
 
-## 7. Sounds
+## 7. Instruments and the room
 
-Hold **GLO** and press a seat button to step to that part's next sound. The screen names it for a moment.
+Hold **GLO** and the top of the screen becomes the band's line-up: the instrument each part is playing, and the
+room the band is in. While you hold it:
+
+| Turn | To choose |
+|---|---|
+| KNOB1 | the bass's instrument |
+| KNOB2 | the chords' instrument |
+| KNOB3 | the melody's instrument |
+| KNOB4 | the room: DRY, CLOSE, ROOM, HALL, FAR |
+
+Each knob offers that part's own kind of instrument first and then all the others, so a part can play anything:
+a pad for a bass line, a bass for a tune. The change is heard on the next note. The line-up and the room are part
+of the piece: they are kept in its code, its scenes and the shipped pieces.
+
+There are two kinds of instrument so far, and more are coming.
+
+**Analogue**: two detuned oscillators and a resonant filter that opens and closes with each note.
+
+| Instrument | What it is |
+|---|---|
+| MONO LEAD | One note at a time, gliding into the next when notes are joined. A full, singing lead |
+| UNISON SAW | The part's voices stacked on one note and spread across the two sides: wide and thick |
+| SQUARE LEAD | A hollow pulse wave whose width moves slowly; one note at a time |
+| SYNTH BRASS | The filter opens as the note swells |
+| MOOG BASS | A sawtooth with an octave under it and a filter that snaps shut; glides |
+| ACID | A single sawtooth through a filter near to whistling; glides |
+| REESE | Two sawtooths well apart in tune, grinding slowly against each other |
+| ANALOGUE PAD | A slow, soft wash |
+| STRING MACHINE | A sawtooth and its octave through the chorus |
+
+**FM**: the first sounds, each now with movement of its own. ROUND, EDGE, SUB, PLUCK and SOFT BASS; FM PIANO,
+FM ORGAN, FM PLUCK, SOFT PAD and GLASS; FM LEAD, FM REED, FM BELL, FM FLUTE and FM BRASS.
+
+Every instrument has some life in it: held notes gain a gentle vibrato after a moment, pitch drifts very slightly
+as a player's would, harder playing is brighter, and the parts sit in different places between the two sides.
+The whole band plays through a chorus, which thickens pads and strings most, and into the room. The bass is kept
+out of the room so it stays clear.
 
 ## 8. Recording a phrase
 
@@ -189,7 +226,7 @@ The screen, from the top: the four words (the one you last turned is highlighted
 line, with the bar being played marked. Four lanes showing where each part strikes in this bar; a dashed lane is
 your seat. Then the key, tempo, variation and bar count, and at the bottom the piece's code.
 
-**Hold SAVE** to see the code filling the whole screen, in three groups of six, for reading out or photographing.
+**Hold SAVE** to see the code filling the whole screen, in three groups of seven, for reading out or photographing.
 
 ## 11. What is kept
 
@@ -222,7 +259,7 @@ Full detail, with sources: [FLASHING-SAFETY.md](FLASHING-SAFETY.md).
 ## 14. Known limits of the Mark I
 
 - The share code is shown but cannot yet be typed in.
-- No reverb or other effects; the sound is dry.
+- No plucked, struck, organ or electric piano instruments yet; no tempo delay.
 - The keys do not yet sense how hard they are played.
 - MIDI clock is not followed.
 - At *frantic* the parts are dense and land on top of each other more than they should.

@@ -67,6 +67,11 @@
 58900 keys 0
 59000 shot
 59200 btnup 11
+59400 btndown 7
+59500 enc 4 6
+59600 enc 5 1
+59800 shot
+59900 btnup 7
 60000 btndown 9
 60600 shot
 60700 btnup 9

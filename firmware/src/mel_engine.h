@@ -31,7 +31,10 @@ enum { MEL_DEGREES, MEL_SNAPPED, MEL_CHROMATIC };           /* key layout */
 #define MEL_KEYS 13u                            /* 0 = the engine chooses */
 #define MEL_LENGTHS 6u
 #define MEL_VARIATIONS 1024u
-#define MEL_SOUNDS 8u
+#define MEL_SOUNDS 64u                          /* an instrument's number (mel_synth.h has the list) */
+#define MEL_KITS 8u
+#define MEL_ROOMS 5u                            /* dry, close, room, hall, far */
+#define MEL_REV 1u                              /* how a stored piece numbers its instruments (0: by part, before there was a list) */
 #define MEL_LAYOUTS 3u
 #define MEL_TRIMS 16u                           /* 0 = the engine chooses */
 #define MEL_STYLES 12u                          /* the first is FREE: the evenly spread engine (the code has room for 16) */
@@ -41,7 +44,7 @@ enum { MEL_DEGREES, MEL_SNAPPED, MEL_CHROMATIC };           /* key layout */
 typedef struct {                                /* (no padding: it is compared and stored as bytes) */
     uint16_t variation;
     uint8_t mood, energy, feel, shape, colour, key, length, layout, follow, trim, boost, style;
-    uint8_t role[MEL_ROLES], sound[MEL_ROLES], take[MEL_ROLES], spare[2];
+    uint8_t role[MEL_ROLES], sound[MEL_ROLES], take[MEL_ROLES], room, rev;
 } mel_piece_t;
 _Static_assert(sizeof(mel_piece_t) == 28, "mel_piece_t must have no padding");
 
@@ -67,7 +70,8 @@ static const uint8_t MEL_LENGTH_BARS[MEL_LENGTHS] = {4, 8, 12, 16, 24, 32};
 
 static void mel_default(mel_piece_t *p)         /* doing nothing already sounds good: you on the melody, the band behind */
 {
-    static const mel_piece_t D = {.mood = 2, .energy = 2, .length = 1, .role = {MEL_ENGINE, MEL_ENGINE, MEL_YOU, MEL_ENGINE}};
+    static const mel_piece_t D = {.mood = 2, .energy = 2, .length = 1, .role = {MEL_ENGINE, MEL_ENGINE, MEL_YOU, MEL_ENGINE},
+                                  .sound = {0, 5, 10, 0}, .room = 2, .rev = MEL_REV};
     *p = D;
 }
 
@@ -77,32 +81,33 @@ static int mel_valid(const mel_piece_t *p)
     if (p->mood >= MEL_MOODS || p->energy >= MEL_ENERGIES || p->feel >= MEL_FEELS || p->shape >= MEL_SHAPES ||
         p->colour >= MEL_COLOURS || p->key >= MEL_KEYS || p->length >= MEL_LENGTHS || p->layout >= MEL_LAYOUTS ||
         p->follow > 1u || p->trim >= MEL_TRIMS || p->boost > MEL_MAX_BOOST || p->variation >= MEL_VARIATIONS ||
-        p->style >= MEL_STYLES || p->spare[0] || p->spare[1])
+        p->style >= MEL_STYLES || p->room >= MEL_ROOMS || p->rev != MEL_REV)
         return 0;
     for (r = 0; r < MEL_ROLES; r++)
-        if (p->role[r] > MEL_OFF || p->sound[r] >= MEL_SOUNDS || p->take[r] >= MEL_TAKES) return 0;
+        if (p->role[r] > MEL_OFF || p->sound[r] >= (r == MEL_PULSE ? MEL_KITS : MEL_SOUNDS) || p->take[r] >= MEL_TAKES) return 0;
     return 1;
 }
 
-/* ---- the code: a piece as 18 characters ------------------------------------------------------------------
- * 84 bits of settings in 17 characters of 5 bits, and a check character. The alphabet has no 0, 1, I or O, so
+/* ---- the code: a piece as 21 characters ------------------------------------------------------------------
+ * 96 bits of settings in 20 characters of 5 bits, and a check character. The alphabet has no 0, 1, I or O, so
  * nothing in it can be read as something else. The check is Luhn's, mod 32: it catches any one wrong character,
  * and two neighbours swapped (all but one pair of them). */
-#define MEL_CODE_CHARS 18u
-#define MEL_CODE_DATA 17u
-#define MEL_CODE_TEXT 21u                       /* "XXXXXX-XXXXXX-XXXXXX" and the NUL */
-#define MEL_FIELDS 26u
+#define MEL_CODE_CHARS 21u
+#define MEL_CODE_DATA 20u
+#define MEL_CODE_GROUP 7u
+#define MEL_CODE_TEXT 24u                       /* "XXXXXXX-XXXXXXX-XXXXXXX" and the NUL */
+#define MEL_FIELDS 27u
 enum { MEL_CODE_OK, MEL_CODE_BAD_CHAR, MEL_CODE_BAD_CHECK, MEL_CODE_OTHER_MARK, MEL_CODE_BAD_VALUE };
 static const char MEL_ALPHABET[33] = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 
-static const uint8_t MEL_FIELD_BITS[MEL_FIELDS] = {4, 3, 3, 3, 3, 4, 4, 3, 10, 2, 2, 2, 2, 3, 3, 3, 3, 2, 1, 4, 4,
-                                                   4, 3, 3, 3, 3};   /* the mark first; 84 bits */
+static const uint8_t MEL_FIELD_BITS[MEL_FIELDS] = {4, 3, 3, 3, 3, 4, 4, 3, 10, 2, 2, 2, 2, 6, 6, 6, 3, 2, 1, 4, 4,
+                                                   4, 3, 3, 3, 3, 3};   /* the mark first; 96 bits */
 static void mel_fields(mel_piece_t *p, uint16_t *f, int unpack)   /* the settings as a row of numbers, in the code's order */
 {
     uint8_t *b[MEL_FIELDS - 1u] = {&p->mood, &p->energy, &p->feel, &p->shape, &p->colour, &p->key, &p->length, 0,
                       &p->role[0], &p->role[1], &p->role[2], &p->role[3], &p->sound[0], &p->sound[1], &p->sound[2],
                       &p->sound[3], &p->layout, &p->follow, &p->trim, &p->boost, &p->style, &p->take[0], &p->take[1],
-                      &p->take[2], &p->take[3]};
+                      &p->take[2], &p->take[3], &p->room};
     uint32_t i;
     for (i = 0; i < MEL_FIELDS - 1u; i++) {
         if (i == 7u) {
@@ -136,7 +141,7 @@ static void mel_code_make(const mel_piece_t *p, char *text)   /* text: MEL_CODE_
             if (f[i] >> k & 1u) v[bit / 5u] |= (uint8_t)(1u << (bit % 5u));
     v[MEL_CODE_DATA] = (uint8_t)((32u - mel_luhn(v, MEL_CODE_DATA, 2)) % 32u);
     for (i = 0, k = 0; i < MEL_CODE_CHARS; i++) {
-        if (i == 6u || i == 12u) text[k++] = '-';
+        if (i == MEL_CODE_GROUP || i == 2u * MEL_CODE_GROUP) text[k++] = '-';
         text[k++] = MEL_ALPHABET[v[i]];
     }
     text[k] = 0;
@@ -162,8 +167,9 @@ static int mel_code_read(const char *text, mel_piece_t *out)   /* dashes, spaces
         for (k = 0; k < MEL_FIELD_BITS[i]; k++, bit++)
             if (v[bit / 5u] >> (bit % 5u) & 1u) f[i] |= (uint16_t)(1u << k);
     if (f[0] != MEL_MARK) return MEL_CODE_OTHER_MARK;
-    if (v[MEL_CODE_DATA - 1u] >> 4) return MEL_CODE_BAD_VALUE;   /* the spare bit */
+    if (v[MEL_CODE_DATA - 1u] >> 1) return MEL_CODE_BAD_VALUE;   /* the spare bits */
     mel_fields(&q, f, 1);
+    q.rev = MEL_REV;
     if (!mel_valid(&q)) return MEL_CODE_BAD_VALUE;
     *out = q;
     return MEL_CODE_OK;
@@ -324,6 +330,7 @@ static void mel_plan(const mel_piece_t *p, mel_plan_t *pl)
     pl->attack = (uint8_t)MEL_CUE[p->mood][1];
     pl->bright = MEL_CUE[p->mood][2];
     m = MEL_MODE[pl->mode];
+    for (i = 0; i < 7u; i++) pl->cand[i] = 0;
     for (i = 0, pl->ncand = 0; i < 7u; i++) {   /* the chords a piece may sit on: the major and minor ones */
         uint32_t d = MEL_HOME_ORDER[i] - 1u;
         uint32_t third = (m[(d + 2u) % 7u] + 12u - m[d]) % 12u, fifth = (m[(d + 4u) % 7u] + 12u - m[d]) % 12u;

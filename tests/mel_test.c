@@ -36,8 +36,8 @@ static void random_piece(mel_piece_t *p)
     p->shape = (uint8_t)rnd(MEL_SHAPES); p->colour = (uint8_t)rnd(MEL_COLOURS); p->key = (uint8_t)rnd(MEL_KEYS);
     p->length = (uint8_t)rnd(MEL_LENGTHS); p->layout = (uint8_t)rnd(MEL_LAYOUTS); p->follow = (uint8_t)rnd(2);
     p->trim = (uint8_t)rnd(MEL_TRIMS); p->boost = (uint8_t)rnd(MEL_MAX_BOOST + 1u); p->variation = (uint16_t)rnd(MEL_VARIATIONS);
-    p->style = (uint8_t)rnd(MEL_STYLES);
-    for (r = 0; r < MEL_ROLES; r++) { p->role[r] = (uint8_t)rnd(4); p->sound[r] = (uint8_t)rnd(MEL_SOUNDS); p->take[r] = (uint8_t)rnd(MEL_TAKES); }
+    p->style = (uint8_t)rnd(MEL_STYLES); p->room = (uint8_t)rnd(MEL_ROOMS); p->rev = MEL_REV;
+    for (r = 0; r < MEL_ROLES; r++) { p->role[r] = (uint8_t)rnd(4); p->sound[r] = (uint8_t)rnd(r == MEL_PULSE ? MEL_KITS : MEL_SOUNDS); p->take[r] = (uint8_t)rnd(MEL_TAKES); }
 }
 
 /* ---- the code */
@@ -49,7 +49,7 @@ static void test_code(void)
     mel_default(&p);
     CHECK(mel_valid(&p), "the default piece is not valid");
     mel_code_make(&p, text);
-    CHECK(strlen(text) == 20 && text[6] == '-' && text[13] == '-', "code shape: %s", text);
+    CHECK(strlen(text) == 23 && text[7] == '-' && text[15] == '-', "code shape: %s", text);
     for (i = 0; i < 20000u; i++) {
         random_piece(&p);
         mel_code_make(&p, text);
@@ -60,7 +60,7 @@ static void test_code(void)
     for (i = 0; i < 300u; i++) {                /* one wrong character: always caught */
         random_piece(&p);
         mel_code_make(&p, text);
-        for (j = 0; j < 20u; j++) {
+        for (j = 0; j < 23u; j++) {
             if (text[j] == '-') continue;
             for (c = 0; c < 32u; c++) {
                 if (MEL_ALPHABET[c] == text[j]) continue;
@@ -75,7 +75,7 @@ static void test_code(void)
     for (i = 0, caught = tried = 0; i < 3000u; i++) {   /* two neighbours swapped: nearly always */
         random_piece(&p);
         mel_code_make(&p, text);
-        for (j = 0; j + 1u < 20u; j++) {
+        for (j = 0; j + 1u < 23u; j++) {
             uint32_t b = text[j + 1u] == '-' ? j + 2u : j + 1u;
             if (text[j] == '-' || text[j] == text[b]) continue;
             memcpy(bad, text, sizeof bad);
@@ -90,8 +90,8 @@ static void test_code(void)
     for (j = 0; text[j]; j++) bad[j] = (char)(text[j] >= 'A' && text[j] <= 'Z' ? text[j] + 32 : text[j] == '-' ? ' ' : text[j]);
     bad[j] = 0;
     CHECK(mel_code_read(bad, &q) == MEL_CODE_OK && !memcmp(&p, &q, sizeof p), "small letters and spaces should read");
-    CHECK(mel_code_read("K7QM2X-VD9F4T-RW8AB", &q) == MEL_CODE_BAD_CHAR, "a short code");
-    CHECK(mel_code_read("K7QM2X-VD9F4T-RW8A01", &q) == MEL_CODE_BAD_CHAR, "0 and 1 are not in the alphabet");
+    CHECK(mel_code_read("K7QM2XV-D9F4TRW-8AB23A", &q) == MEL_CODE_BAD_CHAR, "a short code");
+    CHECK(mel_code_read("K7QM2XV-D9F4TRW-8AB2301", &q) == MEL_CODE_BAD_CHAR, "0 and 1 are not in the alphabet");
 }
 
 /* ---- every piece: no wrong notes, in its register, in its bar, in order */
