@@ -33,6 +33,7 @@ yourself on the keys. Nothing is random: the same settings always give the same 
 | REC | Keep what you play as a looping phrase | Snap what you record to the beat, or keep your own timing |
 | HOME + REC | Undo the last recording pass. Held for a second: clear the whole phrase | |
 | SAVE | Keep everything now. Held: the piece's code, large | |
+| HOME + PLAY | The training flight: a built-in lesson, twelve steps. Again: leave it | |
 | OCT−, OCT+ | Your octave | |
 
 A dial turned while the band is playing takes effect at the next bar line, so the music never stumbles.
@@ -41,6 +42,16 @@ A dial turned while the band is playing takes effect at the next bar line, so th
 
 Switch on. The Merlin Engines mark shows, then the Melisma plate, then the main screen: four words, which are
 the piece. Press **PLAY**. That is all that is needed to make music.
+
+### The training flight
+
+A new instrument starts with a short lesson built in: twelve steps, each naming one thing to do (press PLAY,
+turn a knob, tap a part, play a fill, open the panel, record, save). It waits until you have done it, answers
+"ROGER", and moves on. The light of the control to use blinks. Everything works normally underneath, so you are
+playing the real instrument throughout.
+
+- **HOME + PLAY** starts the flight at any time, or leaves it.
+- **HOME**, tapped on its own, passes over a step.
 
 ## 4. The words
 

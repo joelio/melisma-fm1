@@ -16,6 +16,7 @@
  *   REC         keep what you play: it loops with the piece, and you can play over it again. HOME + REC: undo the
  *               last pass (held: clear it all). EDIT + REC: snap what you play to the beat, or not
  *   SAVE        keep everything now; held: the piece's code, large
+ *   HOME + PLAY the training flight: the instrument a step at a time (HOME alone skips a step; again: leave)
  *   keys        you, in the seat you took (or over the band's melody), in the layout chosen
  *
  * A dial turned while the band plays takes effect at the next bar line. The engine (mel_engine.h) is a pure
@@ -726,6 +727,74 @@ static uint32_t panel_key(uint32_t k)           /* -> the piece changed */
     return 1;
 }
 
+/* ---- the training flight: the instrument, a leg at a time. Everything works as ever underneath; each leg waits
+ * for you to do the thing it names (HOME, tapped, passes over one), and the light of the control to use blinks */
+enum { TV_KEY = 1, TV_PANEL = 2, TV_FILL = 4, TV_SAVE = 8, TV_REC = 16 };   /* what happened in this pass of the loop */
+typedef struct { const char *title, *line[3]; uint8_t led; } leg_t;       /* led: the button to point at (0xFF: none) */
+static const leg_t LEG[] = {
+    {"PRESS PLAY", {"The band starts. Four parts:", "bass, chords, melody, pulse.", ""}, BTN_PLAY},
+    {"TURN KNOB 1", {"The mood, bright to tense.", "A change lands on the next", "bar, so it never stumbles."}, 0xFF},
+    {"TURN KNOB 2", {"The energy: how many notes,", "how high, how fast.", ""}, 0xFF},
+    {"TURN KNOB 3", {"The style: the band's beat.", "FREE lets the engine write", "it all."}, 0xFF},
+    {"PLAY A KEY", {"Bright keys are home. Every", "key fits: there are no", "wrong notes."}, 0xFF},
+    {"TAP ENV", {"The melody drops out at the", "next bar. Tap again later", "and it is back."}, BTN_ENV},
+    {"HOLD ENV", {"Half a second: the melody", "seat is yours. Play it.", "A tap hands it back."}, BTN_ENV},
+    {"TAP ARP", {"A fill, to the end of the", "bar. Hold it for a build.", ""}, BTN_ARP},
+    {"HOLD SEQ", {"The keys become a panel.", "Press a glowing key:", "sections, scenes, and more."}, BTN_SEQ},
+    {"PRESS REC", {"Play a few notes, then", "press REC again. They loop", "with the piece."}, BTN_REC},
+    {"TAP SAVE", {"Everything is kept. Its", "light glows when something", "is not. Held: the code."}, BTN_SAVE},
+    {"ALL YOURS", {"HOME + PLAY brings this", "flight back. The Pilot's", "Notes have the rest."}, 0xFF},
+};
+#define LEGS (sizeof LEG / sizeof LEG[0])
+static uint32_t tut_on, tut_leg, tut_ms, tut_ok, tut_was_rec;
+static mel_piece_t tut_ref;                     /* the piece as the leg began */
+static void tut_go(uint32_t leg)
+{
+    tut_leg = leg; tut_ok = 0; tut_ms = fm1_ms; tut_was_rec = 0;
+    tut_ref = set.piece;
+    if (leg >= LEGS) tut_on = 0;
+}
+static void tut_step(uint32_t ev)               /* has the leg been flown? */
+{
+    const mel_piece_t *p = &set.piece;
+    uint32_t done = 0;
+    if (!tut_on) return;
+    if (tut_ok) { if (fm1_ms - tut_ms > 900u) tut_go(tut_leg + 1u); return; }
+    if (rec_on) tut_was_rec = 1;
+    switch (tut_leg) {
+    case 0: done = seq_on; break;
+    case 1: done = p->mood != tut_ref.mood; break;
+    case 2: done = p->energy != tut_ref.energy; break;
+    case 3: done = p->style != tut_ref.style; break;
+    case 4: done = ev & TV_KEY; break;
+    case 5: done = p->role[MEL_MELODY] != tut_ref.role[MEL_MELODY]; break;
+    case 6: done = p->role[MEL_MELODY] == MEL_YOU; break;
+    case 7: done = ev & TV_FILL; break;
+    case 8: done = ev & TV_PANEL; break;
+    case 9: done = (ev & TV_REC) || (tut_was_rec && !rec_on); break;
+    case 10: done = ev & TV_SAVE; break;
+    default: done = fm1_ms - tut_ms > 8000u; break;
+    }
+    if (done) { tut_ok = 1; tut_ms = fm1_ms; }
+}
+static void draw_tut(void)
+{
+    const leg_t *l = &LEG[tut_leg < LEGS ? tut_leg : LEGS - 1u];
+    char s[16], *e;
+    uint32_t i;
+    cv_begin(240, 32, C_BLACK);
+    cv_text(8, 10, &FONT_S, "TRAINING FLIGHT", M_DIM);
+    e = putn(s, tut_leg + 1u); e = put(e, " / "); putn(e, LEGS);
+    cv_text(232 - text_w(&FONT_S, s), 10, &FONT_S, s, M_DIM);
+    cv_blit(0, 6);
+    cv_begin(240, 32, C_BLACK);
+    cv_text(8, 0, &FONT_L, tut_ok && tut_leg + 1u < LEGS ? "ROGER" : l->title, tut_ok ? M_INK : M_ACC);
+    cv_blit(0, 38);
+    cv_begin(240, 64, C_BLACK);
+    for (i = 0; i < 3u; i++) cv_text(8, 4 + (int32_t)i * 20, &FONT_S, l->line[i], M_INK);
+    cv_blit(0, 70);
+}
+
 static void keep(void)                          /* write it all down (an erase stalls the sound for a moment) */
 {
     settings_save(&set, sizeof set);
@@ -751,12 +820,13 @@ static void app_main(void)
     uint32_t prev = 0, k, r, hot = 0, hot_ms = 0, held_back = 0, panel_latch = 0;
     uint32_t words_drawn = ~0u, bar_drawn = ~0u, code_drawn = ~0u;
     uint32_t seat_ms[MEL_ROLES] = {0}, seat_used = 0, seq_ms = 0, seq_used = 0, arp_ms = 0, rec_ms = 0, rec_wait = 0;
-    uint32_t save_ms = 0, save_down = 0, card = 0, load_ms = 0;
+    uint32_t save_ms = 0, save_down = 0, card = 0, load_ms = 0, fresh = 0, home_ms = 0, home_used = 1, tut_drawn = ~0u;
 
     if (settings_load(&set, sizeof set) || !mel_valid(&set.piece) || set.oct < -2 || set.oct > 2) {
         memset(&set, 0, sizeof set);
         mel_default(&set.piece);
         set.snap = 1;
+        fresh = 1;                              /* nothing kept yet: a new instrument, or a new owner */
     }
     if (set.level < -6 || set.level > 6) set.level = 0;
     if (set.preset >= MEL_PRESETS) set.preset = 0;
@@ -770,9 +840,10 @@ static void app_main(void)
         if (!mel_valid(&set.held[r])) { set.held[r] = set.piece; if (set.piece.role[r] == MEL_HELD) set.piece.role[r] = MEL_ENGINE; }
     mel_plan(&set.piece, &plan);
     splash();
+    if (fresh) { tut_on = 1; tut_go(0); }       /* the first time, the training flight offers itself */
 
     for (;;) {
-        uint32_t keys, down, up, rel, b, changed = 0, redo = 0, alt, st, bar, btn, home, seqd, panel, mode;
+        uint32_t keys, down, up, rel, b, changed = 0, redo = 0, alt, st, bar, btn, home, seqd, panel, mode, tv = 0;
         mel_piece_t *p = &set.piece;
         int32_t e;
         platform_poll();
@@ -871,11 +942,19 @@ static void app_main(void)
         if ((rel & (1u << BTN_SEQ)) && !seq_used && fm1_ms - seq_ms < 400u) panel_latch = !panel_latch;
         panel = panel_latch || seqd;
 
-        if (b & (1u << BTN_ARP)) { fill_swap(1); arp_ms = fm1_ms; }   /* a fill now; held: a build, bar after bar */
+        if (b & (1u << BTN_HOME)) { home_ms = fm1_ms; home_used = 0; }   /* HOME, tapped alone, passes over a leg of the flight */
+        if (b & ~(1u << BTN_HOME)) home_used = 1;
+        if ((rel & (1u << BTN_HOME)) && !home_used && tut_on && fm1_ms - home_ms < 500u) tut_go(tut_leg + 1u);
+
+        if (b & (1u << BTN_ARP)) { fill_swap(1); arp_ms = fm1_ms; tv |= TV_FILL; }   /* a fill now; held: a build, bar after bar */
         k = (btn >> BTN_ARP & 1u) && fm1_ms - arp_ms > 250u;
         if (k != fill_hold) { fill_hold = k; redo = 1; }
 
-        if (b & (1u << BTN_PLAY)) { if (seq_on) { seq_halt(); rec_on = 0; } else seq_start(); bar_drawn = ~0u; }
+        if ((b & (1u << BTN_PLAY)) && home) {   /* HOME + PLAY: the training flight, or out of it */
+            tut_on = !tut_on;
+            if (tut_on) { if (seq_on) { seq_halt(); rec_on = 0; } tut_go(0); }
+            words_drawn = bar_drawn = ~0u;
+        } else if (b & (1u << BTN_PLAY)) { if (seq_on) { seq_halt(); rec_on = 0; } else seq_start(); bar_drawn = ~0u; }
         if (seq_ended) { seq_ended = 0; rec_on = 0; sec_cur = SEC_A; words_drawn = bar_drawn = ~0u; }
         if (b & (1u << BTN_REC)) {
             if (home) { rec_ms = fm1_ms; rec_wait = 1; }
@@ -912,7 +991,7 @@ static void app_main(void)
                 card = 0;
                 lcd_fill(0, 0, 240, 240, C_BLACK);
                 words_drawn = bar_drawn = code_drawn = ~0u;
-            } else { keep(); say("SAVED", 0, ""); }
+            } else { keep(); say("SAVED", 0, ""); tv |= TV_SAVE; }
         }
         if (b & (1u << BTN_OCT_DOWN) && set.oct > -2) { set.oct--; dirty = 1; t_change = fm1_ms; }
         if (b & (1u << BTN_OCT_UP) && set.oct < 2) { set.oct++; dirty = 1; t_change = fm1_ms; }
@@ -925,8 +1004,8 @@ static void app_main(void)
         for (k = 0; k < 27u; k++) {
             if (up >> k & 1u) key_up(k);
             if (!(down >> k & 1u)) continue;
-            if (!panel) key_down(k, 100);
-            else { seq_used = 1; if (panel_key(k)) changed = 1; words_drawn = code_drawn = ~0u; }
+            if (!panel) { key_down(k, 100); tv |= TV_KEY; }
+            else { seq_used = 1; if (panel_key(k)) changed = 1; words_drawn = code_drawn = ~0u; tv |= TV_PANEL; }
         }
         if (pulse_ask) {                        /* (a drum is a strike, not a held voice: it goes in beside the notes) */
             uint32_t a = pulse_ask;
@@ -972,6 +1051,9 @@ static void app_main(void)
         fm1_led_key(BTN_REC, rec_on);           /* lit: it is listening; glowing: there is a phrase */
         fm1_led_key_glow(BTN_REC, !rec_on && phrase.n);
         fm1_led_key_glow(BTN_SAVE, dirty || phrase_dirty);   /* glowing: something is not yet kept */
+        tut_step(tv);
+        if (tut_on && !tut_ok && tut_leg < LEGS && LEG[tut_leg].led != 0xFFu && (fm1_ms >> 7 & 1u))
+            fm1_led_key(LEG[tut_leg].led, !(fm1_ms >> 9 & 1u));   /* the control to use: a quick blink */
 
         /* the screen: only what changed */
         if (fm1_ms - load_ms > 2000u) { load_show = load_peak * 100u / LOAD_BLOCK; load_peak = 0; load_ms = fm1_ms; }
@@ -979,7 +1061,10 @@ static void app_main(void)
         mode = alt ? 1u : panel ? 2u : 0u;
         idle_ok = 1;
         if (!card) {
-            if ((st = mode << 8 | hot | sec_cur << 10) != words_drawn) { words_drawn = st; draw_words(mode, hot); }
+            if (tut_on && !panel && !alt) {     /* the flight has the top of the screen (the panel and EDIT still show theirs) */
+                if ((st = tut_leg | tut_ok << 8) != tut_drawn) { tut_drawn = st; draw_tut(); }
+                words_drawn = ~0u;
+            } else if ((st = mode << 8 | hot | sec_cur << 10) != words_drawn) { words_drawn = st; tut_drawn = ~0u; draw_words(mode, hot); }
             if ((st = bar | seq_on << 8 | alt << 9 | sec_cur << 10) != bar_drawn) { bar_drawn = st; draw_bars(bar, seq_on); draw_facts(bar, alt); }
             if (note_on && fm1_ms - note_ms > 2500u) note_on = 0;
             if ((st = (note_ms << 14) ^ (mode | note_on << 2 | (uint32_t)set.scene_at << 3 | (alt ? load_show : 0u) << 7)) != code_drawn) { code_drawn = st; draw_code(mode); }

@@ -1,10 +1,14 @@
-# Melisma: the plates, then play; you take a few notes over the band; the dials turn; a phrase is kept; a seat is
+# Melisma: the plates; a new instrument offers the training flight, which is left (HOME + PLAY); then play; you take a few notes over the band; the dials turn; a phrase is kept; a seat is
 # taken; then the performance: a fill, the panel (section B, a scene kept, the chords climbing), the code card,
-# a save while it plays, and the ending
+# a save while it plays, the ending, and then the training flight (HOME + PLAY), flown most of the way
 # encoders: 0 SELECT, 1 ALGORITHM, 2..5 KNOB1..4, 6 PRESETS
 # buttons: 2 FX, 3 SEL, 4 ENV, 5 LFO, 6 EDIT, 7 GLO, 8 HOME, 9 SAVE, 10 ARP, 11 SEQ, 12 PLAY, 13 REC
 800 shot
 2200 shot
+3100 shot
+3200 btndown 8
+3300 btn 12
+3400 btnup 8
 3500 btn 12
 3000 keys 1
 3400 keys 0
@@ -75,4 +79,23 @@
 64400 keys 0
 64500 btn 11
 70000 shot
-71000 end
+70500 btndown 8
+70600 btn 12
+70700 btnup 8
+71200 shot
+71500 btn 12
+73000 enc 2 1
+73800 shot
+75000 enc 3 1
+76500 enc 4 1
+78000 keys 4
+78200 keys 0
+79500 btn 4
+80200 shot
+81000 btn 8
+82000 btn 10
+83500 btn 8
+84500 btn 8
+85000 btn 9
+86500 shot
+87000 end
