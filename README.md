@@ -28,10 +28,7 @@ Version 1.0 is new. Please read this before installing.
 
 - It was developed and played on **one FM-1**, a late-2026 unit with the newer flash chip (UC25HQ80, `0xB36014`)
   and m-bootloader. It has not been tried on the older Puya chip. The platform underneath (Dinghy) supports both.
-- Builds up to a few days before 1.0 were installed and played on that unit. **The 1.0 package itself had not
-  been run on a device when it was released**: its newest parts (the EASY keys, time lock, part levels, the
-  surprise piece, typing a code in, and the last 36 instruments) were tested on a computer and in an emulator.
-  This note will be removed when that has been done.
+- The released 1.0 package is installed and running on that unit.
 - Every build is checked on a computer: about 19 million engine checks, a measurement of every instrument, the
   platform's own test suite, and a timing run of the heaviest possible band in an emulator.
 - The sound was designed by measurement and by one pair of ears. Reports of instruments that sound wrong are welcome.
