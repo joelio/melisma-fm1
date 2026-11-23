@@ -1,6 +1,6 @@
 # Plan: from Mark I to an instrument you perform on
 
-Agreed with Joel on 20 November 2026 ("let's lock in"), with one change: style patterns the research marked as
+Agreed on 20 November 2026, with one change: style patterns the research marked as
 unsure are left out. Based on [RESEARCH-NOTES.md](RESEARCH-NOTES.md). **Stages 1 and 2 are built** (see the end of
 [DESIGN.md](DESIGN.md) for what it became; the gestures below were the proposal). Each stage ends with something
 to install and play.

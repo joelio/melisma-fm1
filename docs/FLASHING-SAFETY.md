@@ -21,29 +21,20 @@ Numbers in square brackets refer to the sources at the end.
   `firmware/loader/ldr_core.c`). Other firmwares have added that protection
   [9]; we should too, because development means many installs.
 
-## 2. This unit
+## 2. The unit this was developed on
 
 | Fact | Value | How known |
 |---|---|---|
-| Firmware | Stock V15 (`FM-1_015`), app checksum OK | M-Flasher, 20 Nov |
-| Flash chip | **`0xB36014`** (the newer UC25HQ80) | M-Flasher, 20 Nov |
-| Chip key | `0x980F` | M-Flasher, 20 Nov |
-| Bootloader | **m-bootloader 2.4-395e6cc**, installed 20 Nov at about 13:16 | Second backup's `.json` |
-| Pristine backup | `fm1-20261120-131629.bin`, stock bootloader, SHA-256 `c82a0a4c…d27d684a` | Hash recomputed and matches |
-| Backup after the bootloader install | `fm1-20261120-131652.bin`, SHA-256 `057e400a…bc08811f` | Hash recomputed and matches |
+| Firmware before | Stock V15 (`FM-1_015`), app checksum OK | M-Flasher |
+| Flash chip | **`0xB36014`** (the newer UC25HQ80) | M-Flasher |
+| Bootloader | **m-bootloader 2.4**, installed before the first custom firmware | M-Flasher |
 
-The two backups differ only in sectors 0 to 3 (the 16 KiB boot area), which is
-what a bootloader-only install should change. Both are in
-`Documents/M-Flasher/backups` and copied to `recovery/backups/` in this
-project.
+Two full backups were taken first: one of the untouched unit, one after m-bootloader was installed. They differ
+only in sectors 0 to 3 (the 16 KiB boot area), which is what a bootloader-only install should change.
 
-Confirmed by Joel on 20 Nov after the install: stock V15 starts normally, PLAY
-at power-on opens the recovery menu, and REC at power-on reaches download mode.
-The official Dinghy 0.5 package for the first install is in
-`recovery/dinghy-0.5/dinghy-0.5.fwsc` (release checksum and build attestation
-verified).
-
-Dinghy 0.5 accepts both flash chips, so the chip does not affect our firmware.
+Confirmed on the unit after that install: stock V15 starts normally, PLAY at power-on opens the recovery menu,
+and REC at power-on reaches download mode. Dinghy 0.5's official package (release checksum and build attestation
+verified) was the first custom firmware installed, then Melisma.
 
 ## 3. How FM-1s get bricked
 

@@ -1,0 +1,43 @@
+# the pictures in the docs (tools/shots.sh): the boot screens, the training flight, a piece playing, the line-up,
+# the panel, EDIT, the code large, a code being typed in
+800 shot
+2200 shot
+3400 shot
+3600 btndown 8
+3700 btn 12
+3800 btnup 8
+4000 enc 6 24
+4300 btn 12
+11000 shot
+12000 btndown 7
+12400 shot
+12600 btnup 7
+13000 btndown 11
+13200 keys 32
+13300 keys 0
+13400 keys 262144
+13500 keys 0
+14200 shot
+14400 btnup 11
+15000 btndown 6
+15400 shot
+15600 btnup 6
+16000 btndown 9
+16700 shot
+16900 btnup 9
+17500 btndown 8
+17600 btn 9
+17700 btnup 8
+17800 keys 1024
+17900 keys 0
+18000 keys 16
+18100 keys 0
+18200 keys 2048
+18300 keys 0
+18400 enc 0 5
+18500 enc 1 1
+18600 keys 4
+18700 keys 0
+19000 shot
+19200 btn 9
+20000 end

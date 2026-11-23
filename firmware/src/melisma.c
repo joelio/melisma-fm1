@@ -879,7 +879,7 @@ static void draw_tut(void)
     cv_begin(240, 32, C_BLACK);
     e = put(s, "FLIGHT "); e = putn(e, tut_leg + 1u); e = put(e, "/"); putn(e, LEGS);
     cv_text(8, 10, &FONT_S, s, M_DIM);
-    cv_text(232 - text_w(&FONT_S, "HOME+PLAY LEAVES"), 10, &FONT_S, "HOME+PLAY LEAVES", M_DIM);
+    cv_text(232 - text_w(&FONT_S, "HOME+PLAY ENDS"), 10, &FONT_S, "HOME+PLAY ENDS", M_DIM);
     cv_blit(0, 6);
     cv_begin(240, 32, C_BLACK);
     cv_text(8, 0, &FONT_L, tut_ok && tut_leg + 1u < LEGS ? "ROGER" : l->title, tut_ok ? M_INK : M_ACC);

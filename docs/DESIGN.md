@@ -1,6 +1,6 @@
 # Design: Melisma for the M-VAVE FM-1
 
-Status: agreed by Joel on 20 November 2026. What is built so far: section 16.
+Status: agreed on 20 November 2026. What is built so far: section 16.
 Name: Melisma, a Merlin Engines instrument.
 
 ## 1. What it is
@@ -338,7 +338,7 @@ Not needed for the instrument to work. The device is complete on its own.
 
 ## 15. Decisions
 
-Agreed with Joel, 10 November 2026:
+Agreed, 10 November 2026:
 
 | Question | Decision |
 |---|---|
@@ -443,3 +443,18 @@ the larger 808/909 kit (clap, toms, cowbell).
 
 Still to come from the sound plan: plucked and struck instruments, organs and electric pianos, flute, reed and
 voice, the tempo delay, and the speaker-aware bass.
+
+### Added 23 November 2026: more instruments, easier playing, and the first public version
+
+- 70 more instruments on the two engines (94 in all); instrument numbers are 7 bits in the code. 26 more shipped
+  pieces (64).
+- EASY, the new default key layout: every key is the next of five notes of the scale that sound well over
+  anything (the pentatonic that fits the mood).
+- Time lock (EDIT + PLAY): a key pressed off the beat waits for the next division; one near enough sounds at once.
+- A level for each part (HOME + a knob), kept on the instrument, not in the piece.
+- HOME + ARP: a whole new piece. Choosing an instrument at rest plays it.
+- HOME + SAVE: a code typed in on the instrument (the keys are the letters).
+- The settings grew; those kept by earlier builds are read at their old size and carried over.
+- Docs for publication: README, INSTALL, QUICK-REFERENCE, CHANGELOG, pictures taken from the firmware
+  (`tools/shots.sh`), SVG logos (`tools/gen_logos.py`), `fmhub.json`, and a release workflow that calls the FM-1
+  community's shared build.
