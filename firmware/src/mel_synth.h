@@ -55,6 +55,8 @@ typedef struct {
 } syn_inst_t;
 #define FM(name, home, attack, dec, rel, sus, level, vib, cho, rev, rn, rd, idx, keep, ishift, fb) \
     {name, home, SYN_FM, 0, attack, dec, rel, sus, level, vib, cho, rev, rn, rd, idx, keep, ishift, fb, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+#define FMF(name, home, flags, attack, dec, rel, sus, level, vib, cho, rev, rn, rd, idx, keep, ishift, fb) \
+    {name, home, SYN_FM, flags, attack, dec, rel, sus, level, vib, cho, rev, rn, rd, idx, keep, ishift, fb, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 #define VA(name, home, flags, attack, dec, rel, sus, level, vib, cho, rev, det, semi2, mix2, sub, drive, cut, res, env, fdec, fsus, track) \
     {name, home, SYN_VA, flags, attack, dec, rel, sus, level, vib, cho, rev, 1, 1, 0, 0, 0, 0, det, semi2, mix2, sub, drive, cut, res, env, fdec, fsus, track}
 /* An instrument's number is what a piece and its code keep: add at the end, never reorder. */
@@ -84,8 +86,46 @@ static const syn_inst_t SYN_INST[] = {
     VA("REESE",           0, 0,                      1, 9, 4, 13, 16500,  0, 20, 0,       22, 0, 64, 0, 30,    74, 12, 4, 9, 12, 6),
     VA("ANALOGUE PAD",    1, 0,                      5, 10, 8, 14, 6700,  8, 110, 80,     8,  0, 64, 0, 0,     80, 10, 10, 11, 9, 6),
     VA("STRING MACHINE",  1, 0,                      4, 10, 8, 14, 6500,  6, 127, 70,     5, 12, 48, 0, 0,     96, 5, 4, 10, 12, 6),
+    /* more basses */
+    VA("DEEP SUB",        0, 0,                      1, 9, 4, 14, 15000,  0, 0, 0,        0,  0, 0, 127, 0,    46, 0, 0, 9, 0, 14),
+    VA("RUBBER BASS",     0, 0,                      0, 7, 4, 9, 12000,   0, 0, 0,        0,  0, 0, 60, 30,    48, 60, 30, 7, 0, 8),
+    FM("PICK BASS",       0, 0, 7, 3, 7, 15000, 0, 0, 0,                   1, 1, 300, 2, 3, 50),
+    FM("WOOD BASS",       0, 1, 8, 4, 4, 15500, 0, 0, 0,                   1, 1, 170, 1, 4, 20),
+    FM("SLAP BASS",       0, 0, 7, 3, 6, 15000, 0, 0, 0,                   1, 1, 380, 3, 2, 70),
+    VA("SAW BASS",        0, 0,                      0, 8, 4, 12, 16000,  0, 15, 0,       8,  0, 64, 40, 20,   58, 15, 22, 8, 4, 8),
+    VA("PULSE BASS",      0, SYN_MONO | SYN_PULSE,   0, 8, 4, 12, 15000,  0, 0, 0,        0,  0, 64, 0, 20,    60, 25, 24, 8, 3, 8),
+    /* more keys, mallets and bells */
+    FM("TINE PIANO",      1, 0, 9, 5, 3, 6800, 0, 60, 55,                  14, 1, 60, 0, 3, 0),
+    VA("CLAV",            1, SYN_PULSE,              0, 7, 4, 3, 9000,    0, 30, 40,      0,  0, 64, 0, 40,    70, 40, 40, 6, 2, 8),
+    FM("MARIMBA",         1, 0, 7, 5, 0, 8200, 0, 20, 60,                  4, 1, 140, 0, 2, 0),
+    FM("VIBES",           1, 0, 10, 7, 0, 7000, 0, 90, 80,                 4, 1, 90, 1, 4, 0),
+    FM("KALIMBA",         1, 0, 8, 5, 0, 7800, 0, 30, 65,                  25, 4, 120, 0, 2, 0),
+    FM("GLOCKENSPIEL",    1, 0, 9, 6, 0, 6000, 0, 40, 85,                  11, 4, 100, 2, 5, 0),
+    FM("TUBULAR BELL",    1, 0, 11, 8, 0, 6400, 0, 40, 100,                7, 2, 200, 4, 7, 0),
+    FM("HARP",            1, 0, 9, 6, 0, 7600, 0, 30, 75,                  2, 1, 110, 0, 3, 10),
+    FM("MUSIC BOX",       1, 0, 9, 6, 0, 5600, 0, 30, 80,                  9, 2, 70, 0, 3, 0),
+    VA("POLY SAW",        1, 0,                      1, 8, 6, 12, 9000,   6, 60, 60,      7,  0, 64, 0, 10,    88, 15, 16, 9, 6, 8),
+    VA("SYNTH PLUCK",     1, 0,                      0, 7, 5, 3, 8600,    0, 50, 70,      6,  0, 64, 0, 10,    60, 30, 45, 6, 0, 8),
+    VA("PWM PAD",         1, SYN_PULSE,              5, 10, 8, 14, 6500,  6, 100, 80,     0,  0, 64, 0, 0,     86, 10, 6, 11, 10, 6),
+    VA("SWEEP PAD",       1, SYN_FOLLOW,             5, 10, 8, 14, 7400,  6, 110, 90,     10, 0, 64, 0, 0,     60, 20, 36, 11, 8, 6),
+    VA("WARM STRINGS",    1, 0,                      5, 10, 9, 14, 7000,  10, 127, 85,    7,  0, 64, 0, 0,     86, 0, 0, 10, 16, 6),
+    FM("PIPE ORGAN",      1, 2, 9, 6, 16, 4600, 0, 60, 110,                2, 1, 60, 16, 8, 40),
+    FM("JAZZ ORGAN",      1, 0, 9, 4, 16, 4400, 5, 110, 50,                3, 1, 70, 16, 8, 0),
+    /* more leads */
+    VA("SAW LEAD",        2, 0,                      1, 8, 5, 13, 9000,   18, 35, 55,     10, 0, 64, 0, 30,    92, 25, 18, 9, 8, 8),
+    VA("SOFT LEAD",       2, SYN_MONO | SYN_PULSE,   2, 8, 5, 14, 11000,  24, 30, 60,     0,  0, 64, 0, 0,     80, 10, 6, 9, 10, 8),
+    VA("FIFTH LEAD",      2, SYN_MONO,               1, 8, 5, 13, 9400,   18, 30, 55,     4,  7, 50, 0, 30,    88, 30, 18, 9, 8, 8),
+    VA("OCTAVE LEAD",     2, SYN_MONO,               1, 8, 5, 13, 9000,   18, 30, 55,     5, 12, 56, 40, 20,   88, 25, 18, 9, 8, 8),
+    VA("CHIP LEAD",       2, SYN_PULSE,              0, 8, 3, 15, 8500,   25, 0, 25,      0,  0, 64, 0, 0,     120, 0, 0, 9, 16, 0),
+    VA("BRASS SECTION",   2, SYN_UNI | SYN_FOLLOW,   3, 8, 5, 13, 9000,  10, 40, 60,     8,  0, 64, 0, 20,    62, 12, 42, 9, 8, 6),
+    FMF("WHISTLE",        2, SYN_MONO, 2, 9, 5, 15, 6500, 28, 10, 80,      1, 1, 12, 16, 8, 0),
+    FMF("THEREMIN",       2, SYN_MONO, 3, 9, 6, 15, 6400, 35, 20, 75,      1, 1, 40, 14, 8, 30),
+    FM("HARMONICA",       2, 1, 8, 4, 13, 6800, 18, 25, 50,                1, 1, 170, 12, 6, 80),
+    FM("CLARINET",        2, 2, 9, 5, 14, 7000, 14, 20, 60,                2, 1, 90, 12, 7, 10),
+    FM("STEEL DRUM",      2, 0, 8, 5, 0, 8600, 0, 40, 70,                  5, 2, 130, 2, 4, 0),
 };
 #undef FM
+#undef FMF
 #undef VA
 #define SYN_INSTS (sizeof SYN_INST / sizeof SYN_INST[0])
 static const uint8_t SYN_FIRST[3] = {0, 5, 10}; /* what a part plays when asked for an instrument this build does not have */

@@ -21,7 +21,7 @@ yourself on the keys. Nothing is random: the same settings always give the same 
 | KNOB4 | Shape: loop, rise, fall, arch, question and answer | Length: 4 to 32 bars |
 | SELECT | Key (turn below C for AUTO) | Key layout: degrees, snapped, chromatic |
 | ALGORITHM | Variation: another piece from the same words (0 to 1023) | Tempo, within what the energy or style allows. All the way down: the engine's own |
-| PRESETS | The shipped pieces, 38 of them | Output level, −6 to +6 |
+| PRESETS | The shipped pieces, 50 of them | Output level, −6 to +6 |
 | MASTER | Volume | |
 | FX, SCL, ENV, LFO | The four parts: bass, chords, melody, pulse. **Tap:** the part drops out, or comes back, at the next bar. **Hold half a second:** the seat is yours | That part alone, for as long as you hold it |
 | GLO, held | The band's line-up: KNOB1, 2 and 3 choose the bass's, the chords' and the melody's instrument; KNOB4 chooses the room (section 7) | |
@@ -146,24 +146,54 @@ Each knob offers that part's own kind of instrument first and then all the other
 a pad for a bass line, a bass for a tune. The change is heard on the next note. The line-up and the room are part
 of the piece: they are kept in its code, its scenes and the shipped pieces.
 
-There are two kinds of instrument so far, and more are coming.
+There are 58 instruments, made in two ways. **Analogue** ones are two detuned oscillators and a resonant filter
+that opens and closes with each note. **FM** ones are one pure tone bending another, which is good at struck and
+blown sounds.
 
-**Analogue**: two detuned oscillators and a resonant filter that opens and closes with each note.
+**Bass** (15)
 
 | Instrument | What it is |
 |---|---|
-| MONO LEAD | One note at a time, gliding into the next when notes are joined. A full, singing lead |
-| UNISON SAW | The part's voices stacked on one note and spread across the two sides: wide and thick |
-| SQUARE LEAD | A hollow pulse wave whose width moves slowly; one note at a time |
-| SYNTH BRASS | The filter opens as the note swells |
-| MOOG BASS | A sawtooth with an octave under it and a filter that snaps shut; glides |
+| ROUND, EDGE, SUB, PLUCK, SOFT BASS | The first five FM basses, from mellow to biting |
+| PICK BASS, SLAP BASS, WOOD BASS | A picked electric, a slapped one, and an upright that dies away |
+| MOOG BASS | A sawtooth with an octave under it and a filter that snaps shut; glides between joined notes |
 | ACID | A single sawtooth through a filter near to whistling; glides |
-| REESE | Two sawtooths well apart in tune, grinding slowly against each other |
-| ANALOGUE PAD | A slow, soft wash |
-| STRING MACHINE | A sawtooth and its octave through the chorus |
+| REESE | Two sawtooths well apart in tune, grinding slowly |
+| DEEP SUB | Almost a pure low tone |
+| RUBBER BASS | A bouncy, resonant pluck |
+| SAW BASS, PULSE BASS | Bright and buzzy; hollow and gliding |
 
-**FM**: the first sounds, each now with movement of its own. ROUND, EDGE, SUB, PLUCK and SOFT BASS; FM PIANO,
-FM ORGAN, FM PLUCK, SOFT PAD and GLASS; FM LEAD, FM REED, FM BELL, FM FLUTE and FM BRASS.
+**Keys, mallets, bells and pads** (25)
+
+| Instrument | What it is |
+|---|---|
+| FM PIANO, TINE PIANO | Electric pianos: one warm, one with a bell-like tine |
+| CLAV | A short, funky pluck |
+| FM ORGAN, JAZZ ORGAN, PIPE ORGAN | Three organs, the last best in a large room |
+| MARIMBA, VIBES, KALIMBA, STEEL DRUM* | Struck wood and metal |
+| GLOCKENSPIEL, MUSIC BOX, TUBULAR BELL, GLASS, FM BELL* | Bells, from tiny to tower |
+| HARP, FM PLUCK, SYNTH PLUCK | Plucked sounds |
+| POLY SAW | A bright synth for chords |
+| SOFT PAD, ANALOGUE PAD, PWM PAD, SWEEP PAD | Slow washes; SWEEP opens as it swells |
+| STRING MACHINE, WARM STRINGS | String ensembles through the chorus |
+
+**Lead** (18)
+
+| Instrument | What it is |
+|---|---|
+| MONO LEAD | One note at a time, gliding into the next: a full, singing lead |
+| SAW LEAD | The same character, but several notes at once |
+| UNISON SAW | The part's voices stacked on one note and spread wide |
+| SQUARE LEAD, SOFT LEAD, CHIP LEAD | Hollow pulse waves: moving, mellow, and plain like an old computer |
+| FIFTH LEAD, OCTAVE LEAD | Two oscillators a fifth or an octave apart |
+| SYNTH BRASS, BRASS SECTION, FM BRASS | Brass: one player, a section, and the FM kind |
+| FM LEAD, FM REED, CLARINET, HARMONICA | Reedy sounds |
+| FM FLUTE, WHISTLE, THEREMIN | Pure tones with vibrato; the last two glide |
+
+(* listed with the leads on the dial.)
+
+The mallets, bells, harp and organs are FM likenesses for now; modelled versions are planned and will take over
+the same names.
 
 Every instrument has some life in it: held notes gain a gentle vibrato after a moment, pitch drifts very slightly
 as a player's would, harder playing is brighter, and the parts sit in different places between the two sides.

@@ -61,6 +61,19 @@ static const mel_preset_t MEL_PRESET[] = {
     PS("AUTOBAHN",         MEL_MOTOR,     0, 3, 0, 1, 0, 3,  5, 2,   0, E, E, E, E, 19, 23, 16, 0, 0, 3),   /* motorik: thirty-two bars, never varying */
     PS("BANDITS AT SIX",   MEL_RUSH,      3, 4, 0, 3, 0, 4,  3, 303, 0, E, E, E, E, 21, 22, 15, 0, 0, 3),   /* drum and bass */
     PS("ABOVE THE WEATHER", MEL_DRIFT,    5, 0, 0, 3, 0, 8,  3, 200, 0, E, E, E, E, 4, 22, 13, 0, 1, 4),    /* ambient: no pulse at all */
+    /* and pieces for the instruments */
+    PS("CHAPEL AT DAWN",   MEL_FREE,      5, 0, 2, 3, 0, 6,  3, 71,  0, E, E, E, X, 4, 45, 13, 0, 0, 4),    /* a pipe organ, slowly, in three */
+    PS("CARIBBEAN LEAVE",  MEL_ISLAND,    0, 2, 0, 0, 0, 1,  1, 16,  0, E, E, E, E, 27, 46, 57, 2, 0, 2),   /* a steel drum over a one drop */
+    PS("MUSIC HALL",       MEL_ROADHOUSE, 1, 3, 1, 0, 0, 8,  2, 55,  0, E, E, E, E, 27, 5, 55, 0, 0, 1),    /* a shuffle with a harmonica */
+    PS("SMOKE ROOM",       MEL_LOUNGE,    2, 1, 1, 4, 0, 4,  2, 9,   0, E, E, E, E, 27, 34, 56, 0, 0, 2),   /* wood bass, vibes, a clarinet */
+    PS("ARCADE",           MEL_CLUB,      0, 3, 0, 0, 0, 3,  1, 128, 0, E, E, E, E, 30, 41, 51, 0, 2, 1),   /* pulse waves and plucks */
+    PS("TOY SHOP",         MEL_FREE,      0, 2, 2, 0, 0, 1,  1, 33,  0, E, E, E, X, 26, 39, 36, 0, 2, 2),   /* a music box waltz */
+    PS("TRADE WINDS",      MEL_FREE,      1, 2, 3, 0, 0, 8,  1, 404, 0, E, E, E, E, 27, 35, 33, 0, 4, 2),   /* kalimba and marimba in six */
+    PS("GHOST SIGNAL",     MEL_DRIFT,     3, 0, 0, 2, 0, 10, 3, 617, 0, E, E, E, E, 24, 44, 54, 0, 0, 4),   /* strings, a theremin, a long way off */
+    PS("TOP COVER",        MEL_FUNK,      1, 3, 0, 0, 0, 5,  1, 88,  3, E, E, E, E, 28, 32, 52, 3, 7, 1),   /* slap bass, clav, a brass section */
+    PS("NIGHT WATCH",      MEL_STREET,    4, 1, 0, 0, 0, 11, 1, 23,  0, E, E, Y, E, 24, 31, 48, 0, 0, 3),   /* a deep sub, a tine piano, a soft lead for you */
+    PS("SUNDAY PARADE",    MEL_FREE,      0, 3, 0, 1, 0, 8,  3, 150, 0, E, E, E, E, 29, 40, 49, 0, 5, 3),   /* saws, climbing for sixteen bars */
+    PS("TOWER BELLS",      MEL_FREE,      5, 1, 0, 3, 0, 3,  3, 12,  0, E, E, E, X, 4, 37, 38, 0, 6, 4),    /* tubular bells and a harp */
 };
 #undef E
 #undef Y

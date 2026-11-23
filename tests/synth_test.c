@@ -106,8 +106,9 @@ int main(int argc, char **argv)
         syn_room = 0;
         syn_note_on(role, note, 100, SYN_HELD, 64, 1, id);
         run(FS);                                /* one second held */
-        if (in->eng == SYN_FM) f0 /= in->rd;    /* (a modulator below the note: that is the period) */
-        hz = in->vib ? pitch_hz(FS / 6, FS / 6 + 5600, f0) : pitch_hz(FS / 2, FS / 2 + 17640, f0);   /* before any vibrato; else once it has settled */
+        if (in->eng == SYN_FM && in->idx_keep) f0 /= in->rd;   /* (a modulator below the note: that is the period; one that dies away leaves the note) */
+        hz = in->vib ? pitch_hz(FS / 6, FS / 6 + 5600, f0)     /* before any vibrato; else once it has settled */
+           : in->sustain ? pitch_hz(FS / 2, FS / 2 + 17640, f0) : pitch_hz(FS / 3, FS / 3 + 8820, f0);
         cents = 1200.0 * log2(hz / f0);
         r = rms(FS / 10, FS);
         pk = peak(0, FS);
@@ -117,7 +118,7 @@ int main(int argc, char **argv)
         for (i = 2; i < 2u * at; i++) { int32_t d = buf[i] - buf[i - 2]; if (d < 0) d = -d; if (i > 2u * FS && d > jump) jump = d; }
         printf("%-16s %-6s %+7.1f %7.0f %7d %8.1f\n", in->name, in->eng == SYN_FM ? "fm" : "analog", cents, r, pk, tail);
         CHECK(fabs(cents) < 12.0, "%s is %.1f cents out", in->name, cents);
-        CHECK(r > 150.0, "%s is nearly silent (rms %.0f)", in->name, r);
+        CHECK(r > (in->sustain ? 150.0 : 60.0), "%s is nearly silent (rms %.0f)", in->name, r);
         CHECK(pk < 30000, "%s peaks at %d on one note", in->name, pk);
         CHECK(tail < 2.0, "%s does not go silent (%.1f after three seconds)", in->name, tail);
         CHECK(jump < 3000, "%s clicks when it is let go (a step of %d)", in->name, jump);
