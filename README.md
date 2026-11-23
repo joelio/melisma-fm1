@@ -28,7 +28,7 @@ Version 1.0 is new. Please read this before installing.
 
 - It was developed and played on **one FM-1**, a late-2026 unit with the newer flash chip (UC25HQ80, `0xB36014`)
   and m-bootloader. It has not been tried on the older Puya chip. The platform underneath (Dinghy) supports both.
-- The released 1.0 package is installed and running on that unit.
+- The released 1.0 package is installed on that unit and in regular use there.
 - Every build is checked on a computer: about 19 million engine checks, a measurement of every instrument, the
   platform's own test suite, and a timing run of the heaviest possible band in an emulator.
 - The sound was designed by measurement and by one pair of ears. Reports of instruments that sound wrong are welcome.
