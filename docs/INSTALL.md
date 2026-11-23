@@ -61,10 +61,16 @@ To move to another community firmware, install its `.fwsc` the same way.
 [FLASHING-SAFETY.md](FLASHING-SAFETY.md) explains how FM-1s get into trouble and how they are recovered, with
 its sources.
 
+## How installers see it
+
+Melisma's package identity is `FM-1_1650XY` for version X.Y (1.0 is `FM-1_165010`). It carries the Dinghy update
+loader, so another firmware can be installed over it in the usual way.
+
 ## Checking a download
 
 Each release is built by GitHub from the tagged source and carries a build attestation. To check a package:
 
 ```sh
-gh attestation verify melisma-X.Y.fwsc --repo joelio/melisma-fm1
+gh attestation verify melisma-X.Y.fwsc --repo joelio/melisma-fm1 \
+  --signer-workflow zvenson/fm1-build/.github/workflows/build.yml
 ```

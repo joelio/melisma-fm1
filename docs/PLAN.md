@@ -1,9 +1,12 @@
 # Plan: from Mark I to an instrument you perform on
 
 Agreed on 20 November 2026, with one change: style patterns the research marked as
-unsure are left out. Based on [RESEARCH-NOTES.md](RESEARCH-NOTES.md). **Stages 1 and 2 are built** (see the end of
-[DESIGN.md](DESIGN.md) for what it became; the gestures below were the proposal). Each stage ends with something
-to install and play.
+unsure are left out. Based on [RESEARCH-NOTES.md](RESEARCH-NOTES.md).
+
+**Where it stands in version 1.0:** stages 1 and 2 are built. Of stage 3, the reverb, the chorus and a much
+larger set of instruments are built ([SOUND-PLAN.md](SOUND-PLAN.md) replaced it). Of stage 4, the share screen
+and typing a code in are built. The rest is not. The end of [DESIGN.md](DESIGN.md) says what each became; the
+gestures below were the proposal, and the [Pilot's Notes](PILOTS-NOTES.md) say what the controls really are.
 
 ## What is missing today
 

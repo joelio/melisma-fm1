@@ -1,7 +1,12 @@
 # Sound plan: real instruments for the band
 
-Agreed on 22 November 2026, on condition that it is documented and in the tutorial. **Steps 1 and 2 are built** (the end of [DESIGN.md](DESIGN.md) says what they became). It replaces "Stage 3: Sound" in [PLAN.md](PLAN.md). The research
-behind it is in [SOUND-RESEARCH.md](SOUND-RESEARCH.md). Nothing here is built yet.
+Agreed on 22 November 2026, on condition that it is documented and in the tutorial. It replaces "Stage 3: Sound"
+in [PLAN.md](PLAN.md); the research behind it is in [SOUND-RESEARCH.md](SOUND-RESEARCH.md).
+
+**Where it stands in version 1.0:** steps 1 and 2 are built (life and space, the line-up page, the analogue
+voice), and the two engines that exist carry 94 instruments, including likenesses of many in the list below.
+Steps 3 to 5 (the plucked, struck and organ models, the tempo delay, the speaker-aware bass) are not built. The
+end of [DESIGN.md](DESIGN.md) says what was built and when. What follows is the plan as it was proposed.
 
 ## The problem
 
