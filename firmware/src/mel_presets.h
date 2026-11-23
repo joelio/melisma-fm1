@@ -74,6 +74,20 @@ static const mel_preset_t MEL_PRESET[] = {
     PS("NIGHT WATCH",      MEL_STREET,    4, 1, 0, 0, 0, 11, 1, 23,  0, E, E, Y, E, 24, 31, 48, 0, 0, 3),   /* a deep sub, a tine piano, a soft lead for you */
     PS("SUNDAY PARADE",    MEL_FREE,      0, 3, 0, 1, 0, 8,  3, 150, 0, E, E, E, E, 29, 40, 49, 0, 5, 3),   /* saws, climbing for sixteen bars */
     PS("TOWER BELLS",      MEL_FREE,      5, 1, 0, 3, 0, 3,  3, 12,  0, E, E, E, X, 4, 37, 38, 0, 6, 4),    /* tubular bells and a harp */
+    PS("BRASS BAND",       MEL_FUNK,      0, 3, 1, 0, 0, 6,  1, 64,  0, E, E, E, E, 63, 89, 87, 0, 0, 2),   /* a tuba, horns and a trumpet on a second line */
+    PS("SALOON",           MEL_ROADHOUSE, 1, 3, 0, 0, 0, 8,  1, 91,  0, E, E, E, E, 27, 71, 66, 0, 5, 1),   /* a banjo and a honky-tonk piano on the train beat */
+    PS("COURT DANCE",      MEL_FREE,      0, 2, 2, 0, 0, 3,  1, 210, 0, E, E, E, X, 64, 67, 85, 0, 5, 3),   /* a harpsichord in three */
+    PS("KYOTO RAIN",       MEL_FREE,      4, 1, 0, 3, 0, 5,  3, 77,  0, E, E, E, X, 4, 72, 86, 0, 6, 3),    /* a koto and a pan flute */
+    PS("EVENSONG",         MEL_DRIFT,     3, 0, 0, 2, 0, 3,  3, 320, 0, E, E, E, E, 60, 77, 91, 0, 0, 4),   /* a choir and a violin, far off */
+    PS("RAGA",             MEL_FREE,      1, 1, 3, 1, 0, 3,  3, 501, 0, E, E, E, E, 24, 75, 73, 6, 0, 2),   /* a drone, a harmonium, a sitar */
+    PS("PARIS LEAVE",      MEL_FREE,      2, 2, 2, 0, 0, 8,  1, 17,  0, E, E, E, E, 27, 74, 91, 0, 7, 2),   /* an accordion waltz */
+    PS("LATE SET",         MEL_LOUNGE,    3, 1, 1, 4, 0, 11, 2, 260, 0, E, E, E, E, 58, 65, 90, 0, 0, 2),   /* fretless bass, a piano, a saxophone */
+    PS("WAREHOUSE",        MEL_CLUB,      4, 4, 0, 0, 0, 10, 1, 700, 0, E, E, E, E, 62, 80, 83, 0, 0, 3),   /* supersaws and acid */
+    PS("GARAGE BAND",      MEL_FREE,      1, 3, 0, 0, 0, 5,  1, 39,  2, E, E, E, E, 61, 40, 84, 0, 0, 1),   /* fuzz, and plenty of it */
+    PS("SNOW SCENE",       MEL_FREE,      5, 1, 2, 3, 0, 8,  3, 444, 0, E, E, E, X, 4, 69, 93, 0, 2, 3),    /* a celeste and bells */
+    PS("ANGEL VOICES",     MEL_FREE,      5, 0, 0, 3, 0, 1,  3, 15,  0, E, E, E, X, 24, 76, 92, 0, 0, 4),   /* voices, more or less */
+    PS("HILL COUNTRY",     MEL_ROADHOUSE, 0, 2, 0, 0, 0, 8,  1, 123, 0, E, E, E, E, 27, 68, 91, 0, 5, 2),   /* a dulcimer and a fiddle */
+    PS("BIG FINISH",       MEL_FREE,      0, 3, 0, 1, 0, 1,  3, 999, 0, E, E, E, E, 63, 82, 87, 0, 0, 4),   /* strings and a trumpet, climbing */
 };
 #undef E
 #undef Y

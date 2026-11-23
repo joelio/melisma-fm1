@@ -404,8 +404,9 @@ static void test_keys(void)
             uint32_t note = mel_key_note(&p, &pl, role, k, (int32_t)(v % 5u) - 2);
             if (note == 255u) continue;
             if (p.layout != MEL_CHROMATIC) CHECK(mel_in_scale(&pl, (int32_t)note), "layout %u: key %u plays %u, not in the scale", p.layout, k, note);
-            if (p.layout == MEL_DEGREES) {
+            if (p.layout == MEL_DEGREES || p.layout == MEL_EASY) {
                 CHECK(!k || note > prev, "degrees: key %u is not above key %u", k, k - 1u);
+                if (p.layout == MEL_EASY && k) CHECK((note - prev >= 2u && note - prev <= 4u) || (note - prev == 1u && note % 12u == pl.tonic), "easy: keys %u and %u are %u apart (a semitone would clash)", k - 1u, k, note - prev);
                 if (!k) CHECK(note % 12u == pl.tonic, "degrees: the first key is %u, not the home note %u", note % 12u, pl.tonic);
             } else
                 CHECK(!k || note >= prev, "piano layouts must not go down");

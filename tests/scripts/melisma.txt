@@ -1,6 +1,6 @@
 # Melisma: the plates; a new instrument offers the training flight, which is left (HOME + PLAY); then play; you take a few notes over the band; the dials turn; a phrase is kept; a seat is
 # taken; then the performance: a fill, the panel (section B, a scene kept, the chords climbing), the code card,
-# a save while it plays, the ending, and then the training flight (HOME + PLAY), flown most of the way
+# a save while it plays, the ending, a surprise piece, a level, the time lock, an instrument auditioned, a code typed in, and then the training flight (HOME + PLAY), flown most of the way
 # encoders: 0 SELECT, 1 ALGORITHM, 2..5 KNOB1..4, 6 PRESETS
 # buttons: 2 FX, 3 SEL, 4 ENV, 5 LFO, 6 EDIT, 7 GLO, 8 HOME, 9 SAVE, 10 ARP, 11 SEQ, 12 PLAY, 13 REC
 800 shot
@@ -83,6 +83,30 @@
 64300 keys 1024
 64400 keys 0
 64500 btn 11
+66800 btndown 8
+66900 btn 10
+67000 btnup 8
+67300 shot
+67500 btndown 8
+67600 enc 2 2
+67700 btnup 8
+67800 btndown 6
+67900 btn 12
+68000 btnup 6
+68100 btndown 7
+68150 enc 3 2
+68180 btnup 7
+68200 btndown 8
+68300 btn 9
+68400 btnup 8
+68500 keys 1
+68600 keys 0
+68700 keys 2048
+68800 keys 0
+68900 enc 0 3
+69000 enc 1 1
+69200 shot
+69400 btn 9
 70000 shot
 70500 btndown 8
 70600 btn 12

@@ -16,7 +16,9 @@
  *   PLAY        start and stop                    OCT- OCT+   your octave
  *   REC         keep what you play: it loops with the piece, and you can play over it again. HOME + REC: undo the
  *               last pass (held: clear it all). EDIT + REC: snap what you play to the beat, or not
- *   SAVE        keep everything now; held: the piece's code, large
+ *   HOME + KNOB1..4   each part's level           HOME + ARP   a whole new piece, out of the hat
+ *   EDIT + PLAY       time lock: what you play waits for the beat
+ *   SAVE        keep everything now; held: the piece's code, large. HOME + SAVE: type a code in
  *   HOME + PLAY the training flight: the instrument a step at a time (HOME alone skips a step; again: leave)
  *   keys        you, in the seat you took (or over the band's melody), in the layout chosen
  *
@@ -56,7 +58,7 @@ static volatile uint32_t bench_load[5] = {0x44414F4Cu, 0, 0, 0, 0x4B52414Du};   
 static uint32_t seq_pos, seq_ti;               /* the interrupt's: where in the bar, the next note to strike */
 
 /* the main loop's requests to the interrupt: your notes */
-typedef struct { uint8_t on, role, note, vel, bright, attack, sound; } req_t;
+typedef struct { uint32_t hold; uint8_t on, role, note, vel, bright, attack, sound; } req_t;   /* hold: frames (0: until told to stop) */
 static req_t req_q[32];
 static volatile uint32_t req_w, req_r, seq_stop;
 
@@ -79,7 +81,7 @@ static void app_audio(int32_t *out, uint32_t n)
     }
     while (req_r != req_w) {
         const req_t *q = &req_q[req_r % 32u];
-        if (q->on) syn_note_on(q->role, q->note, q->vel, SYN_HELD, q->bright, q->attack, q->sound);
+        if (q->on) syn_note_on(q->role, q->note, q->vel, q->hold ? q->hold : SYN_HELD, q->bright, q->attack, q->sound);
         else syn_note_off(q->role, q->note);
         req_r++;
     }
@@ -149,7 +151,10 @@ static struct {                                 /* what survives a power-off */
     mel_piece_t scene[8];                       /* pieces kept under the panel's white keys */
     int8_t oct, level;                          /* level: the output trim, -6 .. 6 */
     uint8_t preset, snap, scenes, scene_at;     /* where the PRESETS dial stands; REC snaps to the beat; which scenes are kept; the one last used (+1) */
+    uint8_t mix[4], lock, spare[3];             /* (added after: SET_BEFORE is the size without) each part's level, 0..10; your playing waits for the beat */
 } set;
+#define SET_BEFORE 370u
+static const uint8_t MIX_Q7[11] = {38, 45, 54, 64, 76, 91, 108, 128, 152, 181, 215};   /* 1.5 dB a step; 7 is as made */
 static mel_plan_t plan;
 static uint32_t dirty, t_change;                /* something to keep, and when it last changed */
 
@@ -361,12 +366,13 @@ static uint32_t seat(void)                      /* the role you play: the one se
         if (set.piece.role[r] == MEL_YOU) return r;
     return MEL_MELODY;
 }
+static uint32_t ask_hold;                       /* the next asked note sounds this long by itself (0: until its key is let go) */
 static void ask(uint32_t on, uint32_t role, uint32_t note, uint32_t vel)
 {
     req_t *q;
     if (note > 127u || req_w - req_r >= 32u) return;
     q = &req_q[req_w % 32u];
-    q->on = (uint8_t)on; q->role = (uint8_t)role; q->note = (uint8_t)note; q->vel = (uint8_t)vel;
+    q->on = (uint8_t)on; q->role = (uint8_t)role; q->note = (uint8_t)note; q->vel = (uint8_t)vel; q->hold = ask_hold;
     q->bright = (uint8_t)mel_brightness(&set.piece, &plan, seq_bar);
     q->attack = plan.attack;
     q->sound = set.piece.sound[role];
@@ -612,7 +618,8 @@ static void draw_code(uint32_t alt)             /* alt: 1 EDIT is held, 2 the ke
         e = put(s, "keys ");
         e = put(e, MEL_LAYOUT_NAME[set.piece.layout]);
         cv_text(8, 0, &FONT_S, s, M_DIM);
-        e = put(s, set.snap ? "snap  " : "");
+        e = put(s, set.lock ? "lock " : "");
+        e = put(e, set.snap ? "snap " : "");
         e = put(e, "load ");
         put(putn(e, load_show), "%");
         cv_text(232 - text_w(&FONT_S, s), 0, &FONT_S, s, M_DIM);
@@ -685,6 +692,57 @@ static void splash(void)                        /* the maker's mark, then the in
         for (t0 = fm1_ms; fm1_ms - t0 < 1500u; ) platform_poll();
     }
     lcd_fill(0, 0, 240, 240, C_BLACK);
+}
+
+/* ---- time lock: what you play waits for the next place a note would fall ---------------------------------- */
+static uint32_t lock_due[27], lock_off[27];     /* when a waiting key sounds, and when a key let go meanwhile stops (ms; 0: neither) */
+static uint8_t lock_up[27];
+static uint32_t lock_wait(void)                 /* ms to wait; 0: play it now (the lock is off, or it is near enough on the beat) */
+{
+    uint32_t bar, at, total, tick, sub, n, s, prev = 0, next;
+    if (!set.lock || !seq_on) return 0;
+    seq_where(&bar, &at);
+    total = mel_bar_ticks(&plan);
+    tick = at * total >> 16;
+    sub = plan.swing || plan.eighths ? 2u : 4u;
+    n = plan.leaves * sub;
+    next = total;
+    for (s = 0; s <= n; s++) {
+        uint32_t g = s < n ? mel_slot_tick(&plan, s, sub) : total;
+        if (g <= tick) prev = g;
+        else { next = g; break; }
+    }
+    if ((tick - prev) * 100u <= (next - prev) * 30u) return 0;
+    return (next - tick) * (bars[seq_cur].frames / total) * 10u / 441u + 1u;
+}
+
+/* ---- a whole new piece, out of the hat (HOME + ARP). Who plays what stays as you had it; BACK brings the last one */
+static void surprise(void)
+{
+    static const uint8_t MANNER[8] = {MEL_BLOCK, MEL_BLOCK, MEL_OPEN, MEL_CLIMB, MEL_WAVE, MEL_BROKEN, MEL_OFFBEAT, MEL_BLOCK};
+    mel_piece_t *p = &set.piece;
+    uint32_t h = mel_noise(fm1_ms, seq_abs, p->variation, req_w, 9), r, i, n;
+#define NEXT(m) ((h = mel_mix(h + 0x9E3779B9u)) % (m))
+    p->mood = (uint8_t)NEXT(MEL_MOODS);
+    p->energy = (uint8_t)(1u + NEXT(3));        /* (not the extremes: a surprise should be a pleasant one) */
+    p->style = (uint8_t)NEXT(MEL_STYLES);
+    p->feel = (uint8_t)(NEXT(10) < 7u ? NEXT(2) : 2u + NEXT(3));
+    p->shape = (uint8_t)NEXT(MEL_SHAPES);
+    p->colour = 0; p->key = 0; p->boost = 0; p->trim = 0;
+    p->length = (uint8_t)(1u + NEXT(3));
+    p->variation = (uint16_t)NEXT(MEL_VARIATIONS);
+    p->take[MEL_BASS] = (uint8_t)(NEXT(4) ? 0u : NEXT(MEL_TAKES));
+    p->take[MEL_CHORDS] = MANNER[NEXT(8)];
+    p->take[MEL_MELODY] = (uint8_t)NEXT(MEL_TAKES);
+    p->take[MEL_PULSE] = (uint8_t)NEXT(MEL_TAKES);
+    for (r = 0; r < 3u; r++) {                  /* each part, an instrument of its own kind */
+        for (i = 0, n = 0; i < SYN_INSTS; i++) n += SYN_INST[i].home == r;
+        n = NEXT(n);
+        for (i = 0; i < SYN_INSTS; i++)
+            if (SYN_INST[i].home == r && !n--) { p->sound[r] = (uint8_t)i; break; }
+    }
+    p->room = (uint8_t)(1u + NEXT(3));
+#undef NEXT
 }
 
 /* ---- the panel: with SEQ held (or tapped, to stay) the keys choose, and do not play --------------------------
@@ -761,7 +819,7 @@ static uint32_t panel_key(uint32_t k)           /* -> the piece changed */
 
 /* ---- the training flight: the instrument, a leg at a time. Everything works as ever underneath; each leg waits
  * for you to do the thing it names (HOME, tapped, passes over one), and the light of the control to use blinks */
-enum { TV_KEY = 1, TV_PANEL = 2, TV_FILL = 4, TV_SAVE = 8, TV_REC = 16 };   /* what happened in this pass of the loop */
+enum { TV_KEY = 1, TV_PANEL = 2, TV_FILL = 4, TV_SAVE = 8, TV_REC = 16, TV_NEW = 32 };   /* what happened in this pass of the loop */
 typedef struct { const char *title, *line[3]; uint8_t led; } leg_t;       /* led: the button to point at (0xFF: none) */
 static const leg_t LEG[] = {
     {"PRESS PLAY", {"The band starts. Four parts:", "bass, chords, melody, pulse.", ""}, BTN_PLAY},
@@ -774,6 +832,7 @@ static const leg_t LEG[] = {
     {"TAP ARP", {"A fill, to the end of the", "bar. Hold it for a build.", ""}, BTN_ARP},
     {"HOLD SEQ", {"The keys become a panel.", "Press a glowing key:", "sections, scenes, and more."}, BTN_SEQ},
     {"HOLD GLO", {"The band's instruments.", "Turn KNOB 1, 2 or 3 to", "change one. KNOB 4: the room"}, BTN_GLO},
+    {"HOME + ARP", {"A whole new piece, out of", "the hat. On the panel, BACK", "brings the last one."}, BTN_ARP},
     {"PRESS REC", {"Play a few notes, then", "press REC again. They loop", "with the piece."}, BTN_REC},
     {"TAP SAVE", {"Everything is kept. Its", "light glows when something", "is not. Held: the code."}, BTN_SAVE},
     {"ALL YOURS", {"HOME + PLAY brings this", "flight back. The Pilot's", "Notes have the rest."}, 0xFF},
@@ -805,8 +864,9 @@ static void tut_step(uint32_t ev)               /* has the leg been flown? */
     case 7: done = ev & TV_FILL; break;
     case 8: done = ev & TV_PANEL; break;
     case 9: done = memcmp(p->sound, tut_ref.sound, sizeof p->sound) || p->room != tut_ref.room; break;
-    case 10: done = (ev & TV_REC) || (tut_was_rec && !rec_on); break;
-    case 11: done = ev & TV_SAVE; break;
+    case 10: done = ev & TV_NEW; break;
+    case 11: done = (ev & TV_REC) || (tut_was_rec && !rec_on); break;
+    case 12: done = ev & TV_SAVE; break;
     default: done = fm1_ms - tut_ms > 8000u; break;
     }
     if (done) { tut_ok = 1; tut_ms = fm1_ms; }
@@ -827,6 +887,45 @@ static void draw_tut(void)
     cv_begin(240, 64, C_BLACK);
     for (i = 0; i < 3u; i++) cv_text(8, 4 + (int32_t)i * 20, &FONT_S, l->line[i], M_INK);
     cv_blit(0, 70);
+}
+
+/* ---- typing a code in (HOME + SAVE): the keys are the letters A to Z in order (there is no I or O), SELECT turns
+ * the letter or number under the mark, ALGORITHM (or OCT) moves the mark, PLAY takes the piece, SAVE leaves */
+static uint8_t ent[MEL_CODE_CHARS];             /* each place: a symbol of the alphabet, or 255: empty */
+static uint32_t ent_at, entry;
+static int ent_read(mel_piece_t *q)
+{
+    char t[MEL_CODE_TEXT];
+    uint32_t i;
+    for (i = 0; i < MEL_CODE_CHARS; i++) t[i] = ent[i] < 32u ? MEL_ALPHABET[ent[i]] : '?';
+    t[i] = 0;
+    return mel_code_read(t, q);
+}
+static void ent_draw(void)
+{
+    mel_piece_t q;
+    int rc = ent_read(&q);
+    const char *msg = rc == MEL_CODE_OK ? "THAT IS A PIECE: PRESS PLAY" : rc == MEL_CODE_OTHER_MARK ? "FROM A NEWER MELISMA"
+                    : rc == MEL_CODE_BAD_CHAR ? "KEYS: LETTERS. SELECT: ANY" : "NOT RIGHT YET: CHECK IT";
+    uint32_t g, j;
+    cv_begin(240, 24, C_BLACK);
+    cv_text((240 - text_w(&FONT_S, "TYPE A CODE IN")) / 2, 6, &FONT_S, "TYPE A CODE IN", M_DIM);
+    cv_blit(0, 0);
+    for (g = 0; g < 3u; g++) {
+        int32_t x = 8;
+        cv_begin(240, 64, C_BLACK);
+        for (j = 0; j < MEL_CODE_GROUP; j++) {
+            uint32_t i = g * MEL_CODE_GROUP + j;
+            char c[2] = {ent[i] < 32u ? MEL_ALPHABET[ent[i]] : '-', 0};
+            text_2x(x + (32 - 2 * text_w(&FONT_L, c)) / 2, 0, c, i == ent_at ? M_ACC : ent[i] < 32u ? M_INK : M_RULE);
+            if (i == ent_at) cv_rect(x + 2, 61, 28, 3, M_ACC);
+            x += 32;
+        }
+        cv_blit(0, 24 + g * 64u);
+    }
+    cv_begin(240, 24, C_BLACK);
+    cv_text((240 - text_w(&FONT_S, msg)) / 2, 2, &FONT_S, msg, rc == MEL_CODE_OK ? M_ACC : M_DIM);
+    cv_blit(0, 216);
 }
 
 static void keep(void)                          /* write it all down (an erase stalls the sound for a moment) */
@@ -857,6 +956,11 @@ static void app_main(void)
     uint32_t save_ms = 0, save_down = 0, card = 0, load_ms = 0, fresh = 0, home_ms = 0, home_used = 1, tut_drawn = ~0u;
 
     k = settings_load(&set, sizeof set);
+    if (k && !settings_load(&set, SET_BEFORE)) {   /* kept by a build before the levels and the lock: all of it, and those as new */
+        set.mix[0] = set.mix[1] = set.mix[2] = set.mix[3] = 7; set.lock = 0;
+        set.spare[0] = set.spare[1] = set.spare[2] = 0;
+        k = 0;
+    }
     for (r = 0; !k && r < 13u; r++) {           /* pieces kept before the instruments were one list: renumber them */
         mel_piece_t *q = r == 0u ? &set.piece : r < 5u ? &set.held[r - 1u] : &set.scene[r - 5u];
         if (q->rev == 0u && q->room == 0u && q->sound[0] < 5u && q->sound[1] < 5u && q->sound[2] < 5u) {
@@ -868,6 +972,7 @@ static void app_main(void)
         memset(&set, 0, sizeof set);
         mel_default(&set.piece);
         set.snap = 1;
+        set.mix[0] = set.mix[1] = set.mix[2] = set.mix[3] = 7;
         fresh = 1;                              /* nothing kept yet: a new instrument, or a new owner */
 #ifdef MEL_BENCH                                /* a test build (tools/check.sh --full): the heaviest band there is, to time */
         set.piece.style = MEL_RUSH; set.piece.energy = 4; set.piece.boost = MEL_MAX_BOOST; set.piece.room = 4;
@@ -879,6 +984,8 @@ static void app_main(void)
     if (set.level < -6 || set.level > 6) set.level = 0;
     if (set.preset >= MEL_PRESETS) set.preset = 0;
     if (set.scene_at > 8u) set.scene_at = 0;
+    for (k = 0; k < 4u; k++) { if (set.mix[k] > 10u) set.mix[k] = 7; syn_mix[k] = MIX_Q7[set.mix[k]]; }
+    for (k = 0; k < MEL_CODE_CHARS; k++) ent[k] = 255;
     for (k = 0; k < 8u; k++)
         if (!mel_valid(&set.scene[k])) set.scenes &= (uint8_t)~(1u << k);
     if (blob_load(0, &phrase, sizeof phrase) || phrase.n > PHRASE_MAX) phrase.n = 0;
@@ -892,7 +999,7 @@ static void app_main(void)
     if (fresh) { tut_on = 1; tut_go(0); }       /* the first time, the training flight offers itself */
 
     for (;;) {
-        uint32_t keys, down, up, rel, b, changed = 0, redo = 0, alt, st, bar, btn, home, seqd, panel, mode, tv = 0, glo;
+        uint32_t keys, down, up, rel, b, changed = 0, redo = 0, alt, st, bar, btn, home, seqd, panel, mode, tv = 0, glo, audition = 0;
         mel_piece_t *p = &set.piece;
         int32_t e;
         platform_poll();
@@ -902,9 +1009,58 @@ static void app_main(void)
         seqd = btn >> BTN_SEQ & 1u;
         glo = btn >> BTN_GLO & 1u;
 
-        /* the dials. With GLO held they choose the band: an instrument for each part, and the room */
+        if (entry) {                            /* a code is being typed in: nothing else listens */
+            uint32_t was = ent_at, redraw = 0;
+            mel_piece_t q;
+            b = fm1_input_edges(&rel);
+            if ((e = fm1_enc_take(ENC_SELECT)) != 0) { ent[ent_at] = (uint8_t)(((ent[ent_at] < 32u ? ent[ent_at] : (e > 0 ? 31u : 0u)) + 32u + (uint32_t)(e % 32 + 32)) % 32u); redraw = 1; }
+            e = fm1_enc_take(ENC_ALGORITHM) + ((b >> BTN_OCT_UP & 1u) ? 1 : 0) - ((b >> BTN_OCT_DOWN & 1u) ? 1 : 0);
+            if (e) { int32_t a = (int32_t)ent_at + e; ent_at = (uint32_t)(a < 0 ? 0 : a >= (int32_t)MEL_CODE_CHARS ? (int32_t)MEL_CODE_CHARS - 1 : a); }
+            for (k = 0; k < 4u; k++) (void)fm1_enc_take(ENC_KNOB1 + k);
+            (void)fm1_enc_take(ENC_PRESETS);
+            keys = fm1_in.notes;
+            for (k = 0; k < 24u; k++)           /* a key: its letter, and on to the next place */
+                if ((keys & ~prev) >> k & 1u) { ent[ent_at] = (uint8_t)(8u + k); if (ent_at + 1u < MEL_CODE_CHARS) ent_at++; redraw = 1; }
+            prev = keys;
+            for (k = 0; k < 27u; k++) { fm1_led_key(KEY_LED(k), keys >> k & 1u); fm1_led_key_glow(KEY_LED(k), k < 24u); }
+            if ((b & (1u << BTN_PLAY)) && ent_read(&q) == MEL_CODE_OK) {
+                uint8_t layout = p->layout, follow = p->follow;
+                undo_keep();
+                *p = q;
+                p->layout = layout; p->follow = follow;   /* (how you play is yours) */
+                mel_plan(p, &plan);
+                syn_room = p->room;
+                dirty = 1; t_change = fm1_ms;
+                say("THE PIECE IS LOADED", 0, "");
+                entry = 0;
+            } else if (b & (1u << BTN_SAVE)) entry = 0;
+            if (!entry) {
+                lcd_fill(0, 0, 240, 240, C_BLACK);
+                words_drawn = bar_drawn = code_drawn = tut_drawn = ~0u;
+                save_down = 0;
+                seq_service(1);
+                continue;
+            }
+            idle_ok = 1;
+            if (redraw || was != ent_at) ent_draw();
+            idle_ok = 0;
+            seq_service(0);
+            midi_in();
+            continue;
+        }
+
+        /* the dials. With GLO held they choose the band: an instrument for each part, and the room.
+         * With HOME held, each part's level */
         for (r = 0; glo && r < 3u; r++)
-            if ((e = fm1_enc_take(ENC_KNOB1 + r)) != 0) { p->sound[r] = (uint8_t)inst_turn(r, p->sound[r], e); changed = 1; hot = r + 1u; }
+            if ((e = fm1_enc_take(ENC_KNOB1 + r)) != 0) { p->sound[r] = (uint8_t)inst_turn(r, p->sound[r], e); changed = 1; hot = r + 1u; audition |= 1u << r; }
+        for (r = 0; home && !glo && r < 4u; r++)
+            if ((e = fm1_enc_take(ENC_KNOB1 + r)) != 0 && turn(&set.mix[r], e, 11, 0)) {
+                syn_mix[r] = MIX_Q7[set.mix[r]];
+                putn(put(put(note_text, MEL_ROLE_NAME[r]), " LEVEL "), set.mix[r]);
+                note_ms = fm1_ms; note_on = 1;
+                dirty = 1; t_change = fm1_ms;
+                home_used = 1;
+            }
         if (glo && (e = fm1_enc_take(ENC_KNOB4)) != 0 && turn(&p->room, e, MEL_ROOMS, 0)) changed = 1, hot = 4;
 
         if ((e = fm1_enc_take(ENC_KNOB1)) != 0 && (alt ? turn(&p->colour, e, MEL_COLOURS, 0) : turn(&p->mood, e, MEL_MOODS, 0))) changed = hot = 1;
@@ -957,7 +1113,7 @@ static void app_main(void)
                 if (glo) {                      /* GLO + a role: its next instrument */
                     if (r != MEL_PULSE) {
                         p->sound[r] = (uint8_t)inst_turn(r, p->sound[r], 1);
-                        changed = 1; hot = r + 1u;
+                        changed = 1; hot = r + 1u; audition |= 1u << r;
                     }
                 } else if (home) {              /* HOME + a role: hold it as it is, or let it go */
                     if (p->role[r] == MEL_HELD) p->role[r] = MEL_ENGINE;
@@ -997,14 +1153,24 @@ static void app_main(void)
         if (b & ~(1u << BTN_HOME)) home_used = 1;
         if ((rel & (1u << BTN_HOME)) && !home_used && tut_on && fm1_ms - home_ms < 500u) tut_go(tut_leg + 1u);
 
-        if (b & (1u << BTN_ARP)) { fill_swap(1); arp_ms = fm1_ms; tv |= TV_FILL; }   /* a fill now; held: a build, bar after bar */
-        k = (btn >> BTN_ARP & 1u) && fm1_ms - arp_ms > 250u;
+        if ((b & (1u << BTN_ARP)) && home) {    /* HOME + ARP: a whole new piece */
+            undo_keep();
+            surprise();
+            say("A NEW PIECE. BACK UNDOES IT", 0, "");
+            changed = 1; hot = 0; tv |= TV_NEW;
+            arp_ms = fm1_ms - 100000u;
+        } else if (b & (1u << BTN_ARP)) { fill_swap(1); arp_ms = fm1_ms; tv |= TV_FILL; }   /* a fill now; held: a build, bar after bar */
+        k = (btn >> BTN_ARP & 1u) && !home && fm1_ms - arp_ms > 250u && fm1_ms - arp_ms < 50000u;
         if (k != fill_hold) { fill_hold = k; redo = 1; }
 
         if ((b & (1u << BTN_PLAY)) && home) {   /* HOME + PLAY: the training flight, or out of it */
             tut_on = !tut_on;
             if (tut_on) { if (seq_on) { seq_halt(); rec_on = 0; } tut_go(0); }
             words_drawn = bar_drawn = ~0u;
+        } else if ((b & (1u << BTN_PLAY)) && alt) {   /* EDIT + PLAY: what you play waits for the beat, or does not */
+            set.lock = !set.lock;
+            say(set.lock ? "TIME LOCK: ON" : "TIME LOCK: OFF", 0, "");
+            dirty = 1; t_change = fm1_ms;
         } else if (b & (1u << BTN_PLAY)) { if (seq_on) { seq_halt(); rec_on = 0; } else seq_start(); bar_drawn = ~0u; }
         if (seq_ended) { seq_ended = 0; rec_on = 0; sec_cur = SEC_A; words_drawn = bar_drawn = ~0u; }
         if (b & (1u << BTN_REC)) {
@@ -1034,6 +1200,13 @@ static void app_main(void)
             phrase_clear();
             say("PHRASE CLEARED", 0, "");
         }
+        if ((b & (1u << BTN_SAVE)) && home) {   /* HOME + SAVE: type a code in */
+            for (k = 0; k < 27u; k++) { key_up(k); lock_due[k] = lock_off[k] = 0; }
+            entry = 1; ent_at = 0; home_used = 1;
+            lcd_fill(0, 0, 240, 240, C_BLACK);
+            ent_draw();
+            continue;
+        }
         if (b & (1u << BTN_SAVE)) { save_ms = fm1_ms; save_down = 1; }
         if (save_down && !card && (btn >> BTN_SAVE & 1u) && fm1_ms - save_ms > 400u) { card = 1; draw_card(); }
         if (save_down && (rel & (1u << BTN_SAVE))) {
@@ -1053,10 +1226,20 @@ static void app_main(void)
         up = prev & ~keys;
         prev = keys;
         for (k = 0; k < 27u; k++) {
-            if (up >> k & 1u) key_up(k);
+            if (up >> k & 1u) { if (lock_due[k]) lock_up[k] = 1; else key_up(k); }
+            if (lock_due[k] && (int32_t)(fm1_ms - lock_due[k]) >= 0) {   /* a key that waited for the beat: now */
+                lock_due[k] = 0;
+                key_down(k, 100);
+                if (lock_up[k]) lock_off[k] = fm1_ms + 110u;             /* (let go while it waited: a short note) */
+            }
+            if (lock_off[k] && (int32_t)(fm1_ms - lock_off[k]) >= 0) { lock_off[k] = 0; key_up(k); }
             if (!(down >> k & 1u)) continue;
-            if (!panel) { key_down(k, 100); tv |= TV_KEY; }
-            else { seq_used = 1; if (panel_key(k)) changed = 1; words_drawn = code_drawn = ~0u; tv |= TV_PANEL; }
+            if (panel) { seq_used = 1; if (panel_key(k)) changed = 1; words_drawn = code_drawn = ~0u; tv |= TV_PANEL; continue; }
+            if (lock_off[k]) { lock_off[k] = 0; key_up(k); }
+            st = lock_wait();
+            if (st) { lock_due[k] = fm1_ms + st; lock_up[k] = 0; }
+            else key_down(k, 100);
+            tv |= TV_KEY;
         }
         if (pulse_ask) {                        /* (a drum is a strike, not a held voice: it goes in beside the notes) */
             uint32_t a = pulse_ask;
@@ -1070,6 +1253,14 @@ static void app_main(void)
         if (changed) {
             mel_plan(p, &plan);
             syn_room = p->room;
+            for (r = 0; r < 3u && !seq_on; r++)     /* the band is at rest: hear the instrument just chosen */
+                if (audition >> r & 1u) {
+                    int32_t at = mel_step_near(&plan, mel_into(plan.tonic, r == 0u ? 36 : r == 1u ? 57 : 69));
+                    ask_hold = 22050;
+                    ask(1, r, (uint32_t)mel_step_midi(&plan, at), 100);
+                    if (r == 1u) { ask(1, r, (uint32_t)mel_step_midi(&plan, at + 2), 90); ask(1, r, (uint32_t)mel_step_midi(&plan, at + 4), 90); }
+                    ask_hold = 0;
+                }
             dirty = 1; t_change = hot_ms = fm1_ms;
             words_drawn = bar_drawn = code_drawn = ~0u;
         }

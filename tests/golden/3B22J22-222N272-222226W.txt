@@ -1,4 +1,4 @@
-3B22J22-222CA32-2222J2L
+3B22J22-222N272-222226W
 WISTFUL MOVING STRAIGHT LOOP col 0 key 0 len 1 var 0 boost 0
 tempo 109, home F, 8 bars of 4 x 96 ticks, swing 0
 bar  1  tension  35  degree 1  bright 59

@@ -120,9 +120,48 @@ static const syn_inst_t SYN_INST[] = {
     VA("BRASS SECTION",   2, SYN_UNI | SYN_FOLLOW,   3, 8, 5, 13, 9000,  10, 40, 60,     8,  0, 64, 0, 20,    62, 12, 42, 9, 8, 6),
     FMF("WHISTLE",        2, SYN_MONO, 2, 9, 5, 15, 6500, 28, 10, 80,      1, 1, 12, 16, 8, 0),
     FMF("THEREMIN",       2, SYN_MONO, 3, 9, 6, 15, 6400, 35, 20, 75,      1, 1, 40, 14, 8, 30),
-    FM("HARMONICA",       2, 1, 8, 4, 13, 6800, 18, 25, 50,                1, 1, 170, 12, 6, 80),
+    FM("HARMONICA",       2, 1, 8, 4, 13, 6800, 18, 25, 50,                1, 1, 170, 12, 6, 60),
     FM("CLARINET",        2, 2, 9, 5, 14, 7000, 14, 20, 60,                2, 1, 90, 12, 7, 10),
     FM("STEEL DRUM",      2, 0, 8, 5, 0, 8600, 0, 40, 70,                  5, 2, 130, 2, 4, 0),
+    /* a third batch. Basses */
+    FMF("FRETLESS",       0, SYN_MONO, 1, 8, 4, 12, 12000, 12, 15, 0,      1, 1, 120, 6, 6, 35),
+    FM("BOOM BASS",       0, 0, 10, 5, 0, 15500, 0, 0, 0,                  1, 1, 25, 0, 3, 0),
+    FM("ORGAN BASS",      0, 0, 9, 3, 15, 9500, 0, 0, 0,                  2, 1, 60, 16, 8, 0),
+    VA("FUZZ BASS",       0, 0,                      0, 8, 4, 12, 9000,   0, 0, 0,        6,  0, 64, 60, 127,  62, 30, 20, 8, 6, 8),
+    VA("UNISON BASS",     0, SYN_UNI,                0, 8, 4, 13, 13500,  0, 10, 0,       10, 0, 64, 0, 20,    60, 15, 18, 8, 6, 8),
+    FM("TUBA",            0, 2, 8, 4, 13, 11500, 0, 0, 0,                  1, 1, 140, 10, 6, 45),
+    VA("CELLO",           0, SYN_MONO,               3, 9, 6, 14, 15000,  16, 20, 0,      4,  0, 40, 0, 10,    62, 20, 10, 10, 10, 10),
+    /* keys, plucked things, pads */
+    FM("FM GRAND",        1, 0, 10, 6, 2, 7200, 0, 20, 55,                 1, 1, 230, 1, 4, 25),
+    FMF("HONKY TONK",     1, SYN_UNI, 0, 10, 6, 2, 7400, 0, 10, 45,        1, 1, 230, 1, 4, 25),
+    VA("HARPSICHORD",     1, SYN_PULSE,              0, 8, 4, 2, 10500,    0, 10, 50,      0,  0, 64, 0, 20,    96, 20, 20, 6, 6, 10),
+    FMF("DULCIMER",       1, SYN_UNI, 0, 9, 6, 0, 7600, 0, 30, 70,         3, 1, 150, 1, 3, 15),
+    FM("CELESTE",         1, 0, 9, 6, 0, 6000, 0, 40, 80,                  4, 1, 60, 1, 4, 0),
+    FM("CRYSTAL",         1, 0, 10, 7, 0, 5200, 0, 50, 100,                7, 1, 90, 3, 6, 0),
+    VA("BANJO",           1, 0,                      0, 6, 4, 1, 6500,    0, 0, 35,       0,  0, 0, 0, 50,     80, 50, 30, 5, 2, 12),
+    FM("KOTO",            1, 0, 9, 6, 0, 7600, 0, 15, 70,                  3, 1, 240, 0, 3, 30),
+    FM("SITAR",           1, 0, 10, 6, 1, 6800, 0, 20, 60,                 1, 1, 200, 6, 7, 60),
+    VA("ACCORDION",       1, SYN_PULSE | SYN_UNI,    2, 9, 4, 15, 8500,   8, 40, 40,      0,  0, 64, 0, 0,     92, 10, 0, 9, 16, 8),
+    FM("HARMONIUM",       1, 3, 9, 5, 15, 5200, 4, 50, 70,                 1, 1, 110, 14, 8, 70),
+    VA("VOX PAD",         1, 0,                      5, 10, 8, 14, 5000,  10, 90, 90,     8,  0, 64, 0, 0,     77, 80, 0, 10, 16, 0),
+    VA("CHOIR",           1, SYN_PULSE,              5, 10, 8, 14, 6500, 10, 90, 100,    0,  0, 64, 0, 0,     69, 72, 0, 10, 16, 0),
+    FM("GLASS PAD",       1, 5, 10, 8, 13, 5200, 6, 90, 100,               4, 1, 60, 8, 9, 0),
+    VA("DARK PAD",        1, 0,                      5, 10, 8, 14, 8600,  6, 80, 85,      10, 0, 64, 30, 0,    66, 15, 0, 10, 16, 6),
+    VA("SUPERSAW PAD",    1, SYN_UNI,                4, 10, 8, 14, 7600,  6, 100, 80,     12, 0, 64, 0, 0,     92, 5, 6, 10, 12, 6),
+    VA("FIFTH PAD",       1, 0,                      5, 10, 8, 14, 7000,  6, 100, 85,     6,  7, 50, 0, 0,     84, 10, 6, 11, 10, 6),
+    VA("OCTAVE STRINGS",  1, 0,                      4, 10, 8, 14, 6800,  10, 127, 85,    6, 12, 64, 0, 0,     92, 5, 0, 10, 16, 6),
+    /* leads and solo instruments */
+    VA("ACID LEAD",       2, SYN_MONO,               0, 8, 4, 12, 4200,   0, 20, 50,      0,  0, 0, 0, 80,     62, 105, 40, 8, 2, 8),
+    VA("FUZZ LEAD",       2, SYN_MONO,               1, 8, 5, 13, 6800,   20, 25, 55,     7,  0, 64, 0, 127,   96, 30, 12, 9, 8, 8),
+    FM("OCARINA",         2, 1, 9, 5, 14, 7600, 14, 15, 70,                1, 1, 25, 12, 7, 10),
+    FM("PAN FLUTE",       2, 1, 9, 5, 13, 7600, 16, 15, 80,                1, 1, 170, 2, 3, 20),
+    FM("TRUMPET",         2, 1, 8, 4, 13, 7000, 16, 15, 55,                1, 1, 230, 11, 6, 50),
+    FMF("TROMBONE",       2, SYN_MONO, 2, 8, 4, 13, 7600, 12, 15, 55,      1, 1, 190, 11, 6, 45),
+    FM("FRENCH HORN",     2, 3, 9, 5, 14, 7800, 8, 20, 80,                 1, 1, 90, 12, 7, 30),
+    FM("SAX",             2, 1, 8, 4, 13, 6800, 20, 15, 55,                1, 1, 150, 12, 6, 62),
+    VA("VIOLIN",          2, SYN_MONO,               3, 9, 5, 14, 10500,  26, 15, 70,     3,  0, 30, 0, 10,    92, 25, 6, 10, 12, 10),
+    VA("VOX LEAD",        2, SYN_MONO | SYN_PULSE,   2, 9, 5, 14, 7000,  24, 25, 70,     0,  0, 64, 0, 0,     79, 100, 0, 10, 16, 0),
+    FM("BELL LEAD",       2, 0, 9, 6, 4, 7600, 0, 40, 75,                  7, 2, 110, 3, 5, 0),
 };
 #undef FM
 #undef FMF
@@ -164,6 +203,7 @@ static struct { uint32_t ph; int32_t amp; } syn_rim;
 static struct { int32_t amp; } syn_open;
 static uint32_t syn_rng = 0x1234ABCDu, syn_ctl;
 static volatile uint32_t syn_room = 2;          /* 0 dry, 1 close, 2 room, 3 hall, 4 far */
+static volatile uint16_t syn_mix[4] = {128, 128, 128, 128};   /* each part's level, /128: bass, chords, melody, pulse */
 
 static int32_t syn_sine(uint32_t ph)            /* a full cycle over 2^32 -> -32767..32767 (Dinghy's refined parabola) */
 {
@@ -295,6 +335,7 @@ static void syn_note_on(uint32_t role, uint32_t note, uint32_t vel, uint32_t hol
         else if (n > 2u) pan += PAN[k & 3u];
         v->gl = (int16_t)(128 - pan); v->gr = (int16_t)(128 + pan);
         peak = (int32_t)((uint32_t)in->level * (vel * vel + vel * 127u) >> 15);   /* between a straight line and a square: soft is still heard */
+        peak = (peak * (int32_t)syn_mix[role]) >> 7;
         if (n == 2u) peak = peak * 23 >> 5;
         else if (n > 2u) peak = peak * 9 >> 4;
         if (peak < 64) peak = 64;
@@ -340,6 +381,7 @@ static void syn_release_all(void)
 static void syn_drum(uint32_t note, uint32_t vel)
 {
     int32_t a = (int32_t)((vel * vel + vel * 127u) * 5u / 8u);   /* 0..20161 */
+    a = (a * (int32_t)syn_mix[3]) >> 7;
     if (note == 36u) { syn_thump.ph = 0; syn_thump.inc = 15582000u; syn_thump.amp = a * 3 / 4; }   /* from 160 Hz down */
     else if (note == 38u) { syn_snap.ph = 0; syn_snap.amp = a / 3; syn_snap.namp = a / 2; }
     else if (note == 37u) { syn_rim.ph = 0; syn_rim.amp = a / 2; }             /* a rim click: a short high knock */

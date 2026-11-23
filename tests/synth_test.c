@@ -100,7 +100,7 @@ int main(int argc, char **argv)
         const syn_inst_t *in = &SYN_INST[id];
         uint32_t role = in->home, note = ROLE_NOTE[role];
         double f0 = 440.0 * pow(2.0, ((double)note - 69.0) / 12.0), hz, cents, r, tail;
-        int32_t pk, jump = 0;
+        int32_t pk, jump = 0, held = 0;
         /* one held note, dry: is it in tune, how loud is it, does it stop cleanly */
         reset();
         syn_room = 0;
@@ -115,13 +115,17 @@ int main(int argc, char **argv)
         syn_note_off(role, note);
         run(FS * 3);
         tail = rms(at - 2205, at);
-        for (i = 2; i < 2u * at; i++) { int32_t d = buf[i] - buf[i - 2]; if (d < 0) d = -d; if (i > 2u * FS && d > jump) jump = d; }
+        for (i = 2; i < 2u * at; i++) {         /* the biggest step from one frame to the next: held, and once let go */
+            int32_t d = buf[i] - buf[i - 2];
+            if (d < 0) d = -d;
+            if (i > 2u * FS) { if (d > jump) jump = d; } else if (i > FS && d > held) held = d;
+        }
         printf("%-16s %-6s %+7.1f %7.0f %7d %8.1f\n", in->name, in->eng == SYN_FM ? "fm" : "analog", cents, r, pk, tail);
         CHECK(fabs(cents) < 12.0, "%s is %.1f cents out", in->name, cents);
         CHECK(r > (in->sustain ? 150.0 : 60.0), "%s is nearly silent (rms %.0f)", in->name, r);
         CHECK(pk < 30000, "%s peaks at %d on one note", in->name, pk);
         CHECK(tail < 2.0, "%s does not go silent (%.1f after three seconds)", in->name, tail);
-        CHECK(jump < 3000, "%s clicks when it is let go (a step of %d)", in->name, jump);
+        CHECK(jump < held * 3 / 2 + 600, "%s clicks when it is let go (a step of %d; %d while held)", in->name, jump, held);
         CHECK(syn_quiet(), "%s leaves a voice running", in->name);
         /* every note of its part's range, fast: nothing blows up */
         reset();

@@ -21,7 +21,7 @@ enum { MEL_BASS, MEL_CHORDS, MEL_MELODY, MEL_PULSE, MEL_ROLES };
 enum { MEL_ENGINE, MEL_YOU, MEL_HELD, MEL_OFF };            /* a role's state */
 enum { MEL_LOOP, MEL_RISE, MEL_FALL, MEL_ARCH, MEL_QA };    /* shape */
 enum { MEL_STRAIGHT, MEL_SWUNG, MEL_WALTZ, MEL_LILTING, MEL_ODD };   /* feel */
-enum { MEL_DEGREES, MEL_SNAPPED, MEL_CHROMATIC };           /* key layout */
+enum { MEL_DEGREES, MEL_SNAPPED, MEL_CHROMATIC, MEL_EASY };   /* key layout */
 
 #define MEL_MOODS 7u
 #define MEL_ENERGIES 5u
@@ -31,11 +31,11 @@ enum { MEL_DEGREES, MEL_SNAPPED, MEL_CHROMATIC };           /* key layout */
 #define MEL_KEYS 13u                            /* 0 = the engine chooses */
 #define MEL_LENGTHS 6u
 #define MEL_VARIATIONS 1024u
-#define MEL_SOUNDS 64u                          /* an instrument's number (mel_synth.h has the list) */
+#define MEL_SOUNDS 128u                         /* an instrument's number (mel_synth.h has the list) */
 #define MEL_KITS 8u
 #define MEL_ROOMS 5u                            /* dry, close, room, hall, far */
 #define MEL_REV 1u                              /* how a stored piece numbers its instruments (0: by part, before there was a list) */
-#define MEL_LAYOUTS 3u
+#define MEL_LAYOUTS 4u
 #define MEL_TRIMS 16u                           /* 0 = the engine chooses */
 #define MEL_STYLES 12u                          /* the first is FREE: the evenly spread engine (the code has room for 16) */
 #define MEL_TAKES 8u                            /* a part's own idea: another take of the same piece */
@@ -56,7 +56,7 @@ static const char *const MEL_COLOUR_NAME[MEL_COLOURS] = {"AUTO", "BRIGHT", "WARM
                                                          "TENSE", "ACHING"};
 static const char *const MEL_KEY_NAME[12] = {"C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"};
 static const char *const MEL_ROLE_NAME[MEL_ROLES] = {"BASS", "CHORDS", "MELODY", "PULSE"};
-static const char *const MEL_LAYOUT_NAME[MEL_LAYOUTS] = {"DEGREES", "SNAPPED", "CHROMATIC"};
+static const char *const MEL_LAYOUT_NAME[MEL_LAYOUTS] = {"SCALE", "SNAP", "PIANO", "EASY"};
 enum { MEL_FREE, MEL_CLUB, MEL_STREET, MEL_FUNK, MEL_ISLAND, MEL_BREEZE, MEL_FIESTA, MEL_LOUNGE, MEL_ROADHOUSE, MEL_MOTOR,
        MEL_RUSH, MEL_DRIFT };
 static const char *const MEL_STYLE_NAME[MEL_STYLES] = {"FREE", "CLUB", "STREET", "FUNK", "ISLAND", "BREEZE", "FIESTA", "LOUNGE",
@@ -71,7 +71,7 @@ static const uint8_t MEL_LENGTH_BARS[MEL_LENGTHS] = {4, 8, 12, 16, 24, 32};
 static void mel_default(mel_piece_t *p)         /* doing nothing already sounds good: you on the melody, the band behind */
 {
     static const mel_piece_t D = {.mood = 2, .energy = 2, .length = 1, .role = {MEL_ENGINE, MEL_ENGINE, MEL_YOU, MEL_ENGINE},
-                                  .sound = {0, 5, 10, 0}, .room = 2, .rev = MEL_REV};
+                                  .sound = {0, 5, 10, 0}, .room = 2, .rev = MEL_REV, .layout = MEL_EASY};
     *p = D;
 }
 
@@ -89,7 +89,7 @@ static int mel_valid(const mel_piece_t *p)
 }
 
 /* ---- the code: a piece as 21 characters ------------------------------------------------------------------
- * 96 bits of settings in 20 characters of 5 bits, and a check character. The alphabet has no 0, 1, I or O, so
+ * 99 bits of settings in 20 characters of 5 bits, and a check character. The alphabet has no 0, 1, I or O, so
  * nothing in it can be read as something else. The check is Luhn's, mod 32: it catches any one wrong character,
  * and two neighbours swapped (all but one pair of them). */
 #define MEL_CODE_CHARS 21u
@@ -100,8 +100,8 @@ static int mel_valid(const mel_piece_t *p)
 enum { MEL_CODE_OK, MEL_CODE_BAD_CHAR, MEL_CODE_BAD_CHECK, MEL_CODE_OTHER_MARK, MEL_CODE_BAD_VALUE };
 static const char MEL_ALPHABET[33] = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 
-static const uint8_t MEL_FIELD_BITS[MEL_FIELDS] = {4, 3, 3, 3, 3, 4, 4, 3, 10, 2, 2, 2, 2, 6, 6, 6, 3, 2, 1, 4, 4,
-                                                   4, 3, 3, 3, 3, 3};   /* the mark first; 96 bits */
+static const uint8_t MEL_FIELD_BITS[MEL_FIELDS] = {4, 3, 3, 3, 3, 4, 4, 3, 10, 2, 2, 2, 2, 7, 7, 7, 3, 2, 1, 4, 4,
+                                                   4, 3, 3, 3, 3, 3};   /* the mark first; 99 bits */
 static void mel_fields(mel_piece_t *p, uint16_t *f, int unpack)   /* the settings as a row of numbers, in the code's order */
 {
     uint8_t *b[MEL_FIELDS - 1u] = {&p->mood, &p->energy, &p->feel, &p->shape, &p->colour, &p->key, &p->length, 0,
@@ -167,7 +167,7 @@ static int mel_code_read(const char *text, mel_piece_t *out)   /* dashes, spaces
         for (k = 0; k < MEL_FIELD_BITS[i]; k++, bit++)
             if (v[bit / 5u] >> (bit % 5u) & 1u) f[i] |= (uint16_t)(1u << k);
     if (f[0] != MEL_MARK) return MEL_CODE_OTHER_MARK;
-    if (v[MEL_CODE_DATA - 1u] >> 1) return MEL_CODE_BAD_VALUE;   /* the spare bits */
+    if (v[MEL_CODE_DATA - 1u] >> 4) return MEL_CODE_BAD_VALUE;   /* the spare bit */
     mel_fields(&q, f, 1);
     q.rev = MEL_REV;
     if (!mel_valid(&q)) return MEL_CODE_BAD_VALUE;
@@ -805,13 +805,20 @@ static uint32_t mel_brightness(const mel_piece_t *p, const mel_plan_t *pl, uint3
 }
 
 /* ---- your keys: what the 27 keys play (0 = F3 .. 26 = G5), for the seat you are in ------------------------
- * degrees: every key is the next note of the scale, the home note under key 0. snapped: a piano, and a key that
- * is not in the scale plays the nearest one that is. chromatic: a piano. */
+ * easy: every key is the next of five notes of the scale that sound well over anything the band plays (the
+ * pentatonic that fits the mood), the home note under key 0. degrees ("scale"): every key is the next note of the
+ * scale. snapped: a piano, and a key that is not in the scale plays the nearest one that is. chromatic: a piano. */
 static const int8_t MEL_SEAT_SHIFT[MEL_ROLES] = {-24, -12, 0, 0};
 static uint32_t mel_key_note(const mel_piece_t *p, const mel_plan_t *pl, uint32_t role, uint32_t key, int32_t octave)
 {
     int32_t base = 53 + MEL_SEAT_SHIFT[role] + 12 * octave, note;
-    if (p->layout == MEL_DEGREES) {
+    if (p->layout == MEL_EASY) {
+        static const uint8_t FIVE[3][5] = {{0, 1, 2, 4, 5}, {0, 2, 3, 4, 6}, {0, 2, 3, 4, 6}};   /* a major third; a minor; a minor with a raised seventh (its seventh leans on the home note) */
+        const uint8_t *m = MEL_MODE[pl->mode];
+        int32_t from = base > 48 ? base - 12 : base;                       /* (five notes an octave: the keys reach further) */
+        int32_t home = mel_step_near(pl, mel_into(pl->tonic, from - 5));
+        note = mel_step_midi(pl, home + 7 * (int32_t)(key / 5u) + FIVE[m[2] == 4u ? 0 : m[6] == 11u ? 2 : 1][key % 5u]);
+    } else if (p->layout == MEL_DEGREES) {
         int32_t home = mel_step_near(pl, mel_into(pl->tonic, base - 5));   /* the home note nearest F, from just below */
         note = mel_step_midi(pl, home + (int32_t)key);
     } else {
